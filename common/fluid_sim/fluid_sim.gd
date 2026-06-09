@@ -5,6 +5,7 @@ extends Node2D
 
 const MAX_SPLATS := 16
 const MAX_IMPULSES := 8
+const MAX_VORTICES := 8
 const SHADER := preload("res://fluid_sim/advect.gdshader")
 
 var vps: Array[SubViewport] = []
@@ -20,6 +21,7 @@ var _vortices: Array = []   # {base: Vector2, amp: Vector2, spd: Vector2, ph: Ve
 
 func setup(vrng: RandomNumberGenerator, w: int, h: int, p_opts: Dictionary) -> void:
 	sim_size = Vector2i(w, h)
+	screen_size = p_opts.get("screen_size", Vector2(1920, 1080))
 	opts = p_opts
 	# Black 1x1 placeholder so prev_tex is never uninitialized (avoids gray from default white sampler)
 	var black_img := Image.create(1, 1, false, Image.FORMAT_RGBA8)
@@ -42,7 +44,10 @@ func setup(vrng: RandomNumberGenerator, w: int, h: int, p_opts: Dictionary) -> v
 		add_child(vp)
 		vps.append(vp)
 		mats.append(mat)
-	var n: int = p_opts.get("vortex_count", 5)
+	var n: int = mini(int(p_opts.get("vortex_count", 5)), MAX_VORTICES)
+	var aspect := Vector2(float(sim_size.x) / float(sim_size.y), 1.0)
+	for mat in mats:
+		mat.set_shader_parameter("aspect", aspect)
 	for i in n:
 		_vortices.append({
 			"base": Vector2(vrng.randf_range(0.2, 0.8), vrng.randf_range(0.2, 0.8)),
@@ -83,7 +88,7 @@ func step(delta: float) -> void:
 		var p: Vector2 = v["base"] + Vector2(sin(t * v["spd"].x + v["ph"].x) * v["amp"].x, cos(t * v["spd"].y + v["ph"].y) * v["amp"].y)
 		vort.append(Vector4(p.x, p.y, v["strength"] * opts.get("vortex_strength", 0.8) * 0.1, v["radius"]))
 	mat.set_shader_parameter("vortex_count", vort.size())
-	mat.set_shader_parameter("vortices", _pad4(vort, 8))
+	mat.set_shader_parameter("vortices", _pad4(vort, MAX_VORTICES))
 	var spos := PackedVector4Array()
 	var scol := PackedVector4Array()
 	for sp in _splats:
