@@ -167,3 +167,19 @@ func test_preset_model_mismatch_fails() -> void:
 func test_preset_missing_file_fails() -> void:
 	var res := PIO.load_preset("/tmp/vx_does_not_exist.json", _demo_schema(), "demo")
 	check(not res["ok"], "missing file is an error")
+
+# ---------------- render driver ----------------
+
+const RD = preload("res://core/render_driver.gd")
+
+func test_parse_user_args() -> void:
+	var out := RD.parse_user_args(PackedStringArray(["--preset", "/tmp/p.json", "--duration", "12.5"]))
+	check_eq(out["preset"], "/tmp/p.json", "preset parsed")
+	check_eq(out["duration"], 12.5, "duration parsed")
+
+func test_parse_user_args_empty_and_partial() -> void:
+	var out := RD.parse_user_args(PackedStringArray([]))
+	check_eq(out["preset"], "", "no preset -> empty")
+	check_eq(out["duration"], 0.0, "no duration -> 0")
+	var out2 := RD.parse_user_args(PackedStringArray(["--preset"]))
+	check_eq(out2["preset"], "", "dangling flag ignored")
