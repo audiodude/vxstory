@@ -5,9 +5,9 @@ const FluidSim = preload("res://fluid_sim/fluid_sim.gd")
 const GRADE := preload("res://fluid_sim/grade.gdshader")
 
 const PALETTES := {
-	"classic": {"peg": Color("#2266ff"), "hot": Color("#ff7711"), "ball": Color("#ffffff")},
-	"neon": {"peg": Color("#ff2299"), "hot": Color("#00ffcc"), "ball": Color("#ccff00")},
-	"mono": {"peg": Color("#999999"), "hot": Color("#ffffff"), "ball": Color("#dddddd")},
+	"classic": {"peg": Color(0.0, 0.2, 1.0), "hot": Color(1.0, 0.35, 0.0), "ball": Color(1.0, 1.0, 1.0)},
+	"neon": {"peg": Color(1.0, 0.0, 0.5), "hot": Color(0.0, 1.0, 0.7), "ball": Color(0.6, 1.0, 0.0)},
+	"mono": {"peg": Color(0.4, 0.4, 0.4), "hot": Color(0.9, 0.9, 0.9), "ball": Color(0.8, 0.8, 0.8)},
 }
 
 class Peg extends StaticBody2D:
@@ -48,8 +48,8 @@ class Ball extends RigidBody2D:
 		shape.shape = circ
 		add_child(shape)
 	func _draw() -> void:
-		draw_circle(Vector2.ZERO, radius, color * 1.6)
-		draw_circle(Vector2.ZERO, radius * 0.55, Color.WHITE * 2.0)
+		draw_circle(Vector2.ZERO, radius, color * 1.3)
+		draw_circle(Vector2.ZERO, radius * 0.4, Color.WHITE * 1.2)
 
 var peg_defs: Array = []      # {pos, hot, parent_idx(-1 or spinner), node(Peg|null), dead_at}
 var spinners: Array = []      # {node, speed}
@@ -76,7 +76,7 @@ func get_schema() -> Dictionary:
 	return {
 		"macros": [
 			PS.macro_def("complexity", 0.5), PS.macro_def("ball_rate", 0.5),
-			PS.macro_def("ink", 0.6), PS.macro_def("shockwave", 0.7),
+			PS.macro_def("ink", 0.5), PS.macro_def("shockwave", 0.7),
 		],
 		"params": [
 			PS.e("layout", "mixed", PackedStringArray(["rings", "grid", "spinners", "mixed"]), {"live": false}),
@@ -95,13 +95,13 @@ func get_schema() -> Dictionary:
 			PS.f("blast_impulse", 600.0, 0.0, 1500.0, {"macro": {"name": "shockwave", "lo": 100.0, "hi": 1200.0}}),
 			PS.f("respawn_period", 8.0, 2.0, 20.0),
 			PS.i("max_balls", 28, 4, 80),
-			PS.f("hot_fraction", 0.25, 0.0, 1.0, {"live": false}),
-			PS.f("glow", 1.3, 0.0, 3.0),
+			PS.f("hot_fraction", 0.2, 0.0, 1.0, {"live": false}),
+			PS.f("glow", 0.8, 0.0, 3.0),
 			PS.e("palette", "classic", PackedStringArray(["classic", "neon", "mono"]), {"live": false}),
-			PS.f("ink_radius", 70.0, 20.0, 200.0, {"macro": {"name": "ink", "lo": 30.0, "hi": 150.0}}),
-			PS.f("ink_strength", 0.8, 0.1, 2.0, {"macro": {"name": "ink", "lo": 0.25, "hi": 1.6}}),
-			PS.f("wake_strength", 0.08, 0.0, 0.4),
-			PS.f("fluid_dissipation", 0.975, 0.9, 0.999),
+			PS.f("ink_radius", 70.0, 20.0, 200.0, {"macro": {"name": "ink", "lo": 25.0, "hi": 100.0}}),
+			PS.f("ink_strength", 0.8, 0.1, 2.0, {"macro": {"name": "ink", "lo": 0.5, "hi": 1.5}}),
+			PS.f("wake_strength", 0.0, 0.0, 0.4),
+			PS.f("fluid_dissipation", 0.992, 0.9, 0.999),
 			PS.f("fluid_noise", 0.8, 0.0, 2.5),
 			PS.f("fluid_flow", 1.2, 0.2, 3.0),
 			PS.f("shock_power", 0.6, 0.0, 2.0, {"macro": {"name": "shockwave", "lo": 0.15, "hi": 1.5}}),
@@ -150,7 +150,7 @@ func restart() -> void:
 	fluid_display.stretch_mode = TextureRect.STRETCH_SCALE
 	var gmat := ShaderMaterial.new()
 	gmat.shader = GRADE
-	gmat.set_shader_parameter("saturation", 1.35)
+	gmat.set_shader_parameter("saturation", 1.4)
 	gmat.set_shader_parameter("contrast", 1.1)
 	fluid_display.material = gmat
 	add_child(fluid_display)
@@ -229,7 +229,7 @@ func _make_pop(speed: float, amount: int) -> GPUParticles2D:
 		g.use_fixed_seed = true
 		g.seed = s.randi()
 	var cmat := CanvasItemMaterial.new()
-	cmat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	cmat.blend_mode = CanvasItemMaterial.BLEND_MODE_MIX
 	g.material = cmat
 	var pm := ParticleProcessMaterial.new()
 	pm.direction = Vector3(1, 0, 0)
@@ -240,7 +240,7 @@ func _make_pop(speed: float, amount: int) -> GPUParticles2D:
 	pm.scale_min = 2.0
 	pm.scale_max = 5.0
 	var grad := Gradient.new()
-	grad.set_color(0, Color(1, 1, 0.8) * 2.0)
+	grad.set_color(0, Color(1, 1, 0.8) * 0.9)
 	grad.set_color(1, Color(1, 0.4, 0.1, 0.0))
 	var gt := GradientTexture1D.new()
 	gt.gradient = grad
@@ -307,7 +307,7 @@ func _check_chain(at: Vector2) -> void:
 
 func on_chain_blast(at: Vector2) -> void:
 	fluid.add_impulse(at, params["shock_power"])
-	fluid.inject_dye(at, Color(1, 1, 1), params["ink_radius"] * 2.0, params["ink_strength"] * 1.5)
+	fluid.inject_dye(at, Color(1.0, 0.85, 0.5), params["ink_radius"] * 1.3, params["ink_strength"] * 0.5)
 
 func _process(delta: float) -> void:
 	super._process(delta)
@@ -319,7 +319,8 @@ func _process(delta: float) -> void:
 	for bi in mini(balls.size(), 10):
 		var b = balls[bi]
 		if is_instance_valid(b):
-			fluid.inject_dye(b.position, b.color, 24.0, params["wake_strength"])
+			var wake_col: Color = (pal["peg"] as Color).lerp(pal["hot"] as Color, 0.5).darkened(0.3)
+			fluid.inject_dye(b.position, wake_col, 24.0, params["wake_strength"])
 	fluid.step(delta)
 	fluid_display.texture = fluid.output_texture()
 	fire_acc += delta

@@ -71,5 +71,6 @@ void fragment() {
 		float g = exp(-dot(d, d) / (splat_pos_r[k].z * splat_pos_r[k].z));
 		c.rgb += splat_color[k].rgb * g * splat_pos_r[k].w;
 	}
+	c.rgb = min(c.rgb, vec3(1.0));
 	COLOR = vec4(c.rgb, 1.0);
 }
