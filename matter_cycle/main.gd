@@ -41,6 +41,7 @@ var vel := PackedVector2Array()
 var col := PackedColorArray()
 var age := PackedFloat32Array()
 var alive := 0
+var _prev_alive := 0
 var flow := PackedVector2Array()  # (FLOW_W+1)x(FLOW_H+1) grid
 var rings: Array = []
 var rings_node: Node2D
@@ -95,6 +96,7 @@ func restart() -> void:
 	rings.clear()
 	burst_pool.clear()
 	alive = 0
+	_prev_alive = 0
 	burst_i = 0
 	spawn_acc = 0.0
 	condense_cd = 0.0
@@ -310,13 +312,14 @@ func _process(delta: float) -> void:
 		var key := Vector2i(int(pos[i].x / 120.0), int(pos[i].y / 120.0))
 		density[key] = density.get(key, 0) + 1
 		i += 1
-	# render swarm
-	for k in int(params["swarm_cap"]):
+	# render swarm — slots above the high-water mark are already parked offscreen
+	for k in maxi(alive, _prev_alive):
 		if k < alive:
 			swarm_mm.set_instance_transform_2d(k, Transform2D(0.0, pos[k]))
 			swarm_mm.set_instance_color(k, col[k] * 1.5)
 		else:
 			swarm_mm.set_instance_transform_2d(k, Transform2D(0.0, Vector2(-9999, -9999)))
+	_prev_alive = alive
 	# condensation
 	if condense_cd <= 0.0:
 		for key in density:
