@@ -3,16 +3,6 @@
   "seed": 1337,
   "duration_sec": 30.0,
   "macros": {"turbulence": 0.6, "viscosity": 0.75, "flow": 0.55, "vibrance": 0.7},
-  "overrides": {
-    "dissipation": 0.995,
-    "inject_strength": 0.6,
-    "inject_radius": 140.0,
-    "injector_count": 8,
-    "injector_speed": 0.5,
-    "flow_speed": 3.0,
-    "noise_strength": 2.0,
-    "vortex_count": 6,
-    "vortex_strength": 1.6
-  },
+  "overrides": {},
   "jitter": {"noise_scale": {"pct": 20.0}}
 }
