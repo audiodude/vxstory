@@ -3,14 +3,6 @@
   "seed": 7041,
   "duration_sec": 30.0,
   "macros": {"energy": 0.72, "density": 0.6, "symmetry": 0.45, "grit": 0.4},
-  "overrides": {
-    "glow": 0.35,
-    "trail_persist": 0.10,
-    "burst_speed": 320.0,
-    "particle_life": 3.5,
-    "particle_count": 5000,
-    "damping": 60.0,
-    "streak_len": 35.0
-  },
+  "overrides": {},
   "jitter": {}
 }
