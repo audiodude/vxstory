@@ -1,0 +1,8 @@
+{
+  "model": "fluid_swirl",
+  "seed": 21,
+  "duration_sec": 30.0,
+  "macros": {"turbulence": 0.25, "viscosity": 0.9, "flow": 0.3, "vibrance": 0.8},
+  "overrides": {"palette": "magma", "injector_count": 3},
+  "jitter": {}
+}

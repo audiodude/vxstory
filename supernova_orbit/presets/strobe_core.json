@@ -1,0 +1,8 @@
+{
+  "model": "supernova_orbit",
+  "seed": 62,
+  "duration_sec": 30.0,
+  "macros": {"accretion": 0.95, "critical_mass": 0.1, "detonation": 0.6, "chaos": 0.7},
+  "overrides": {"palette": "emerald"},
+  "jitter": {}
+}

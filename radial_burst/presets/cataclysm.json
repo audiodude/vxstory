@@ -1,0 +1,8 @@
+{
+  "model": "radial_burst",
+  "seed": 12,
+  "duration_sec": 30.0,
+  "macros": {"energy": 0.95, "density": 0.9, "symmetry": 0.8, "grit": 0.7},
+  "overrides": {"mirror": "quad"},
+  "jitter": {"burst_speed": {"pct": 15.0}}
+}

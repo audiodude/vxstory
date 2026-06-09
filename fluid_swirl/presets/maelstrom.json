@@ -1,0 +1,8 @@
+{
+  "model": "fluid_swirl",
+  "seed": 22,
+  "duration_sec": 30.0,
+  "macros": {"turbulence": 0.95, "viscosity": 0.45, "flow": 0.9, "vibrance": 0.85},
+  "overrides": {"palette": "neon", "vortex_count": 8},
+  "jitter": {"noise_scale": {"pct": 25.0}}
+}

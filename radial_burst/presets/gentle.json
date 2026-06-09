@@ -1,0 +1,8 @@
+{
+  "model": "radial_burst",
+  "seed": 11,
+  "duration_sec": 30.0,
+  "macros": {"energy": 0.35, "density": 0.4, "symmetry": 0.0, "grit": 0.2},
+  "overrides": {"palette": "ice", "loop_period": 8.0},
+  "jitter": {}
+}

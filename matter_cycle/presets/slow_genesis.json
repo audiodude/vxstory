@@ -1,0 +1,8 @@
+{
+  "model": "matter_cycle",
+  "seed": 51,
+  "duration_sec": 30.0,
+  "macros": {"matter": 0.35, "fragility": 0.35, "turbulence": 0.3, "cycle_speed": 0.3},
+  "overrides": {"palette": "mono"},
+  "jitter": {}
+}

@@ -1,0 +1,8 @@
+{
+  "model": "chromatic_cascade",
+  "seed": 42,
+  "duration_sec": 30.0,
+  "macros": {"complexity": 0.75, "ball_rate": 0.9, "ink": 0.95, "shockwave": 0.95},
+  "overrides": {"palette": "neon"},
+  "jitter": {}
+}

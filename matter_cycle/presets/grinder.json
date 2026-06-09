@@ -1,0 +1,8 @@
+{
+  "model": "matter_cycle",
+  "seed": 52,
+  "duration_sec": 30.0,
+  "macros": {"matter": 0.9, "fragility": 0.85, "turbulence": 0.8, "cycle_speed": 0.8},
+  "overrides": {"palette": "spectrum"},
+  "jitter": {"poly_size": {"pct": 20.0}}
+}
