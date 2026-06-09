@@ -3,6 +3,6 @@
   "seed": 2001,
   "duration_sec": 30.0,
   "macros": {"accretion": 0.75, "critical_mass": 0.35, "detonation": 0.75, "chaos": 0.5},
-  "overrides": {"orbit_factor": 0.6, "core_radius": 100.0, "critical": 800, "glow": 0.3, "trail_persist": 0.025},
+  "overrides": {},
   "jitter": {}
 }

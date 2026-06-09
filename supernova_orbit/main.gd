@@ -60,7 +60,7 @@ func model_name() -> String:
 func get_schema() -> Dictionary:
 	return {
 		"macros": [
-			PS.macro_def("accretion", 0.5), PS.macro_def("critical_mass", 0.5),
+			PS.macro_def("accretion", 0.5), PS.macro_def("critical_mass", 0.35),
 			PS.macro_def("detonation", 0.7), PS.macro_def("chaos", 0.4),
 		],
 		"params": [
@@ -68,16 +68,16 @@ func get_schema() -> Dictionary:
 			PS.f("spawn_rate", 120.0, 10.0, 400.0, {"macro": {"name": "accretion", "lo": 30.0, "hi": 300.0}}),
 			PS.i("max_particles", 16000, 2000, 24000, {"live": false}),
 			PS.f("g_strength", 60000000.0, 10000000.0, 250000000.0),
-			PS.f("core_radius", 50.0, 20.0, 120.0),
-			PS.i("critical", 1500, 100, 6000, {"macro": {"name": "critical_mass", "lo": 400, "hi": 4000}}),
-			PS.f("orbit_factor", 1.0, 0.5, 1.3),
+			PS.f("core_radius", 100.0, 20.0, 150.0),
+			PS.i("critical", 1500, 100, 6000, {"macro": {"name": "critical_mass", "lo": 300, "hi": 1730}}),
+			PS.f("orbit_factor", 0.6, 0.5, 1.3),
 			PS.f("chaos_spread", 0.35, 0.0, 1.0, {"macro": {"name": "chaos", "lo": 0.05, "hi": 0.8}}),
 			PS.f("detonation_speed", 1200.0, 200.0, 3000.0, {"macro": {"name": "detonation", "lo": 400.0, "hi": 2500.0}}),
 			PS.i("debris_count", 18, 0, 60),
 			PS.f("debris_radius", 16.0, 6.0, 40.0, {"jitter": {"pct": 20.0}}),
-			PS.f("trail_persist", 0.1, 0.02, 0.5),
+			PS.f("trail_persist", 0.025, 0.02, 0.5),
 			PS.f("fluid_reactivity", 0.5, 0.0, 1.0),
-			PS.f("glow", 1.2, 0.0, 3.0),
+			PS.f("glow", 0.3, 0.0, 3.0),
 			PS.e("palette", "solar", PackedStringArray(["solar", "void", "emerald"]), {"live": false}),
 		],
 	}
@@ -109,7 +109,7 @@ func restart() -> void:
 	# fluid haze (behind everything)
 	fluid = FluidSim.new()
 	add_child(fluid)
-	fluid.setup(rng.stream("vortices"), 480, 270, {"dissipation": 0.99, "noise_strength": 0.5, "flow_speed": 1.0, "noise_scale": 2.0, "vortex_count": 2, "vortex_strength": 0.4})
+	fluid.setup(rng.stream("vortices"), 480, 270, {"dissipation": 0.97, "noise_strength": 0.5, "flow_speed": 1.0, "noise_scale": 2.0, "vortex_count": 2, "vortex_strength": 0.4})
 	fluid_display = TextureRect.new()
 	fluid_display.size = Vector2(1920, 1080)
 	fluid_display.stretch_mode = TextureRect.STRETCH_SCALE
@@ -218,7 +218,7 @@ func _detonate() -> void:
 		add_child(rock)  # root scene — debris render crisp, not in trail buffer
 		debris.append(rock)
 	fluid.add_impulse(CENTER, 1.2 * params["fluid_reactivity"])
-	fluid.inject_dye(CENTER, pal["core"], 320.0, 1.2 * params["fluid_reactivity"])
+	fluid.inject_dye(CENTER, pal["core"], 180.0, 0.5 * params["fluid_reactivity"])
 	mass = 0.0
 	alive = 0  # clear all infalling particles — fresh accretion cycle
 	_trail_clear_frames = 3  # flush trail buffer so gray smear doesn't persist
