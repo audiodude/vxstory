@@ -183,3 +183,18 @@ func test_parse_user_args_empty_and_partial() -> void:
 	check_eq(out["duration"], 0.0, "no duration -> 0")
 	var out2 := RD.parse_user_args(PackedStringArray(["--preset"]))
 	check_eq(out2["preset"], "", "dangling flag ignored")
+
+# ---------------- tweak panel (instancing smoke) ----------------
+
+func test_tweak_panel_builds_rows() -> void:
+	var SimModelScript = load("res://main.gd")  # demo model from Task 5
+	var model = SimModelScript.new()
+	get_root().add_child(model)
+	var TweakPanel = load("res://core/tweak_panel.gd")
+	var panel = TweakPanel.new(model)
+	get_root().add_child(panel)
+	# panel _ready ran synchronously on add_child
+	check(panel._param_rows.size() == model.get_schema()["params"].size(), "one row per param")
+	check(panel._macro_sliders.size() == model.get_schema()["macros"].size(), "one slider per macro")
+	panel.free()
+	model.free()
