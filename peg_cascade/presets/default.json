@@ -2,7 +2,12 @@
   "model": "peg_cascade",
   "seed": 4242,
   "duration_sec": 30.0,
-  "macros": {"complexity": 0.55, "ball_rate": 0.6, "bounciness": 0.65, "fx": 0.7},
+  "macros": {
+    "complexity": 0.75,
+    "ball_rate": 0.6,
+    "bounciness": 0.65,
+    "fx": 0.7
+  },
   "overrides": {},
   "jitter": {}
 }
