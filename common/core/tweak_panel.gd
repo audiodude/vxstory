@@ -178,10 +178,10 @@ func _set_override(p: Dictionary, v) -> void:
 	_after_edit(p)
 
 func _after_edit(p: Dictionary) -> void:
-	if p.get("live", true):
-		model.resolve_live()
-	else:
-		model.resolve_live()
+	# Always re-resolve so model.params stays current; non-live params won't
+	# take visual effect until Restart, hence the hint.
+	model.resolve_live()
+	if not p.get("live", true):
 		_hint.visible = true
 	_param_rows[p["name"]]["clear_btn"].visible = model.overrides.has(p["name"])
 
