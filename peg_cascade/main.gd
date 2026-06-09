@@ -241,7 +241,7 @@ func _spawn_ball() -> void:
 	balls.append(ball)
 
 func _on_ball_contact(other: Node, ball: Ball) -> void:
-	if not other.is_in_group("pegs"):
+	if not is_instance_valid(ball) or not other.is_in_group("pegs"):
 		return
 	var peg := other as Peg
 	if peg.lit > 0.6:
