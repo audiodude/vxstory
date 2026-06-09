@@ -9,5 +9,9 @@
     "cycle_speed": 0.55
   },
   "overrides": {},
-  "jitter": {}
+  "jitter": {
+    "poly_size": {
+      "pct": 15.0
+    }
+  }
 }
