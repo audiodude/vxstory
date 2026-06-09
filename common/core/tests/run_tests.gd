@@ -125,3 +125,45 @@ func test_resolve_unknown_enum_falls_back() -> void:
 	var rng := RNGService.new(7).stream("jitter")
 	var out := MM.resolve(_demo_schema(), {}, {"palette": "nope"}, {}, rng)
 	check_eq(out["palette"], "fire", "unknown enum option falls back to default")
+
+# ---------------- preset io ----------------
+
+const PIO = preload("res://core/preset_io.gd")
+
+func test_preset_roundtrip() -> void:
+	var path := "/tmp/vx_test_preset.json"
+	var err := PIO.save_preset(path, "demo", 99, 12.5,
+		{"energy": 0.8}, {"speed": 440.0, "tint": Color(0, 1, 0)}, {"count": {"pct": 10.0}})
+	check_eq(err, OK, "save ok")
+	var res := PIO.load_preset(path, _demo_schema(), "demo")
+	check(res["ok"], "load ok")
+	check_eq(res["preset"]["seed"], 99, "seed roundtrips")
+	check_eq(res["preset"]["duration_sec"], 12.5, "duration roundtrips")
+	check_eq(res["preset"]["macros"]["energy"], 0.8, "macros roundtrip")
+	check_eq(res["preset"]["overrides"]["speed"], 440.0, "overrides roundtrip")
+	check_eq(res["preset"]["overrides"]["tint"], "#00ff00", "color saved as html string")
+	check_eq(res["preset"]["jitter"]["count"]["pct"], 10.0, "jitter roundtrips")
+	check_eq(res["warnings"].size(), 0, "no warnings on clean preset")
+
+func test_preset_defaults_and_warnings() -> void:
+	var path := "/tmp/vx_test_preset2.json"
+	var fa := FileAccess.open(path, FileAccess.WRITE)
+	fa.store_string(JSON.stringify({"model": "demo", "macros": {"bogus": 1.0}, "overrides": {"nope": 5}}))
+	fa.close()
+	var res := PIO.load_preset(path, _demo_schema(), "demo")
+	check(res["ok"], "loads despite unknowns")
+	check_eq(res["preset"]["seed"], 1, "seed defaults to 1")
+	check_eq(res["preset"]["duration_sec"], 30.0, "duration defaults to 30")
+	check_eq(res["warnings"].size(), 2, "unknown macro + unknown override warned")
+
+func test_preset_model_mismatch_fails() -> void:
+	var path := "/tmp/vx_test_preset3.json"
+	var fa := FileAccess.open(path, FileAccess.WRITE)
+	fa.store_string(JSON.stringify({"model": "other"}))
+	fa.close()
+	var res := PIO.load_preset(path, _demo_schema(), "demo")
+	check(not res["ok"], "model mismatch is an error")
+
+func test_preset_missing_file_fails() -> void:
+	var res := PIO.load_preset("/tmp/vx_does_not_exist.json", _demo_schema(), "demo")
+	check(not res["ok"], "missing file is an error")
