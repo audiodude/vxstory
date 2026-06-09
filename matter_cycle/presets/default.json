@@ -2,7 +2,12 @@
   "model": "matter_cycle",
   "seed": 5150,
   "duration_sec": 30.0,
-  "macros": {"matter": 0.6, "fragility": 0.6, "turbulence": 0.55, "cycle_speed": 0.55},
+  "macros": {
+    "matter": 0.8,
+    "fragility": 0.6,
+    "turbulence": 0.65,
+    "cycle_speed": 0.55
+  },
   "overrides": {},
   "jitter": {}
 }
