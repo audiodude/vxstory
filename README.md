@@ -47,6 +47,25 @@ JSON files in `<model>/presets/`. Format:
 - `jitter` — seeded per-param noise: `{"pct": 15}` (±15%) or `{"abs": 2}` (±2 units)
 - Same preset + different `seed` = visually related but uniquely different variant
 
+### Models vs presets vs seeds
+
+Presets are pure data — every preset of a model runs the exact same code through the
+same resolution pipeline. The taxonomy:
+
+- **Models** differ in code.
+- **Presets** differ in parameters. Most of a variant's character comes from its macro
+  values (e.g. `strobe_core` vs `slow_burn` is mostly the `critical_mass` dial: ~440 vs
+  ~1440 absorbed mass per detonation). Where a variant feels like a different *mode*,
+  it's an enum override selecting a code path that exists in every run — `zen_garden`
+  pins `layout: "rings"`, `cataclysm` pins `mirror: "quad"`.
+- **Seeds** differ in dice rolls: jitter, layouts, spawn timing, injector paths. Same
+  preset + new seed = a structural sibling, different in detail.
+
+Parameter changes can still flip emergent behavior — peg cascade with a low
+`chain_trigger` and big `chain_radius` goes from "pinball" to "constant demolition" —
+but that's all initialization, never per-preset branching. Tweak dials in the panel and
+hit Save: your preset has equal standing with the shipped twelve.
+
 ### Variation presets
 
 Each model ships two named variants:
