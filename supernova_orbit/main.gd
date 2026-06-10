@@ -470,7 +470,9 @@ func _process(delta: float) -> void:
 				det_cooldown = 0.0
 	# --- Detonation / fission per core ---
 	det_cooldown = maxf(det_cooldown - delta, 0.0)
-	# Iterate over copy since _detonate/_fission may mutate cores
+	# Iterate over copy since _detonate/_fission may mutate cores.
+	# cores.has(c) compares dicts by VALUE, but each dict holds a unique
+	# rect Object (compared by reference), so no two cores can be equal.
 	var cores_snapshot: Array = cores.duplicate()
 	for ci in cores_snapshot.size():
 		var c: Dictionary = cores_snapshot[ci]
