@@ -13,10 +13,18 @@ Six parameterized physics/particle video models in Godot 4.6. No sound — pure 
 
 ## Preview / tune
 
-    godot --path <model>            # Tab toggles the tweak panel
+    godot --path <model>                                  # schema defaults
+    godot --path <model> -- --preset presets/<name>.json  # start from a preset
 
-Panel: macro dials on top, low-level params below (editing pins a param: ✕ unpins),
-Save/Load JSON presets, Reroll seed, Restart.
+Examples:
+
+    godot --path supernova_orbit -- --preset presets/strobe_core.json
+    godot --path fluid_swirl -- --preset presets/lava_lamp.json
+
+The preset path is relative to the model's project dir (absolute paths work too).
+Tab toggles the tweak panel: macro dials on top, low-level params below (editing pins
+a param: ✕ unpins), Save/Load JSON presets, Reroll seed, Restart. The Load button is
+the in-app alternative — it opens a file dialog over the model's `presets/` dir.
 
 ## Render
 
@@ -68,7 +76,10 @@ hit Save: your preset has equal standing with the shipped twelve.
 
 ### Variation presets
 
-Each model ships two named variants. Descriptions below are from their actual renders.
+Each model ships two named variants. Load one in preview
+(`godot --path <model> -- --preset presets/<variant>.json`), render it
+(`scripts/render.sh <model> <variant> [secs]`), or open it with the panel's Load
+button. Descriptions below are from their actual renders.
 
 **radial_burst**
 - `gentle` — a soft sea-urchin of fine ice-blue streaks breathing out of the dark every
