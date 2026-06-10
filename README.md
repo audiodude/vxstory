@@ -152,7 +152,7 @@ Expected: `TESTS: 22 run, 0 failed`
 vxstory/
   common/
     core/          # framework: RNGService, ParamSchema, MacroMapper, PresetIO,
-    │              #            RenderDriver, SimModel, TweakPanel
+    │              #            RenderDriver, SimModel, TweakPanel, Director
     fluid_sim/     # shared ping-pong dye advection sim + shaders
   <model>/
     core -> ../common/core          # symlink
