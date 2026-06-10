@@ -1,0 +1,32 @@
+{
+  "director": {
+    "amplitude": 0.3,
+    "enabled": true,
+    "macros": [
+      "accretion",
+      "chaos",
+      "duality"
+    ],
+    "period_sec": 90.0
+  },
+  "duration_sec": 300.0,
+  "jitter": {
+
+  },
+  "macros": {
+    "accretion": 0.76316478351059,
+    "chaos": 0.21777337390805,
+    "critical_mass": 0.45,
+    "detonation": 0.7,
+    "duality": 0.809793606796146
+  },
+  "model": "supernova_orbit",
+  "overrides": {
+    "glow": 0.15,
+    "hue_drift": 14.0,
+    "pulse_depth": 0.14375,
+    "pulse_rate": 0.35,
+    "trail_persist": 0.065
+  },
+  "seed": 31416
+}
