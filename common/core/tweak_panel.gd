@@ -41,6 +41,10 @@ func _build_ui() -> void:
 	_hint.visible = false
 	vbox.add_child(_hint)
 
+	if model.director_cfg.get("enabled", false):
+		var dir_label := _title("DIRECTOR ACTIVE — macros drift")
+		dir_label.add_theme_color_override("font_color", Color.CYAN)
+		vbox.add_child(dir_label)
 	vbox.add_child(_title("MACROS"))
 	for m in model.get_schema()["macros"]:
 		_build_macro_row(vbox, m)
@@ -98,6 +102,8 @@ func _build_macro_row(vbox: VBoxContainer, m: Dictionary) -> void:
 	slider.value_changed.connect(func(v):
 		model.macros[m["name"]] = v
 		val.text = "%.2f" % v
+		if model.director != null:
+			model.director.rebase(m["name"], v)
 		_on_macro_changed())
 	row.add_child(slider)
 	row.add_child(val)

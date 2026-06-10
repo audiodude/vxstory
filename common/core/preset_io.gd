@@ -1,7 +1,7 @@
 extends RefCounted
 # JSON preset load/save + validation against a schema.
 
-static func save_preset(path: String, model: String, seed_value: int, duration_sec: float, macros: Dictionary, overrides: Dictionary, jitter: Dictionary) -> Error:
+static func save_preset(path: String, model: String, seed_value: int, duration_sec: float, macros: Dictionary, overrides: Dictionary, jitter: Dictionary, director: Dictionary = {}) -> Error:
 	var ov := {}
 	for k in overrides:
 		ov[k] = ("#" + overrides[k].to_html(false)) if overrides[k] is Color else overrides[k]
@@ -13,6 +13,8 @@ static func save_preset(path: String, model: String, seed_value: int, duration_s
 		"overrides": ov,
 		"jitter": jitter,
 	}
+	if not director.is_empty():
+		doc["director"] = director
 	var fa := FileAccess.open(path, FileAccess.WRITE)
 	if fa == null:
 		return FileAccess.get_open_error()
@@ -45,6 +47,8 @@ static func load_preset(path: String, schema: Dictionary, model: String) -> Dict
 		for k in data.get(section, {}):
 			if not known_params.has(k):
 				warnings.append("unknown param in %s: %s" % [section, str(k)])
+	var raw_director = data.get("director", {})
+	var director: Dictionary = raw_director if raw_director is Dictionary else {}
 	var preset := {
 		"model": model,
 		"seed": int(data.get("seed", 1)),
@@ -52,5 +56,6 @@ static func load_preset(path: String, schema: Dictionary, model: String) -> Dict
 		"macros": data.get("macros", {}),
 		"overrides": data.get("overrides", {}),
 		"jitter": data.get("jitter", {}),
+		"director": director,
 	}
 	return {"ok": true, "error": "", "warnings": warnings, "preset": preset}

@@ -8,6 +8,7 @@ const RNGService = preload("res://core/rng_service.gd")
 const MacroMapper = preload("res://core/macro_mapper.gd")
 const PresetIO = preload("res://core/preset_io.gd")
 const RenderDriver = preload("res://core/render_driver.gd")
+const DirectorScript = preload("res://core/director.gd")
 
 var seed_value: int = 1
 var duration_sec: float = 30.0
@@ -16,6 +17,9 @@ var overrides: Dictionary = {}
 var jitter: Dictionary = {}
 var params: Dictionary = {}
 var rng  # RNGService
+var director  # Director (always constructed; may be disabled)
+var director_cfg: Dictionary = {}
+var _dir_acc := 0.0
 var movie_mode: bool = false
 var _elapsed: float = 0.0
 
@@ -64,10 +68,12 @@ func adopt_preset(p: Dictionary) -> void:
 		macros[k] = float(p["macros"][k])
 	overrides = p["overrides"].duplicate()
 	jitter = p["jitter"].duplicate()
+	director_cfg = p.get("director", {})
 
 func resolve_and_restart() -> void:
 	rng = RNGService.new(seed_value)
 	params = MacroMapper.resolve(get_schema(), macros, overrides, jitter, rng.stream("jitter"))
+	director = DirectorScript.from_config(director_cfg, macros, rng)
 	restart()
 
 func resolve_live() -> void:
@@ -77,9 +83,16 @@ func resolve_live() -> void:
 	apply_live(params)
 
 func save_to(path: String) -> Error:
-	return PresetIO.save_preset(path, model_name(), seed_value, duration_sec, macros, overrides, jitter)
+	return PresetIO.save_preset(path, model_name(), seed_value, duration_sec, macros, overrides, jitter, director_cfg)
 
 func _process(delta: float) -> void:
+	if director != null and director.enabled:
+		director.tick(delta)
+		_dir_acc += delta
+		if _dir_acc >= 0.25:
+			_dir_acc = 0.0
+			if director.apply(macros):
+				resolve_live()
 	if movie_mode:
 		_elapsed += delta
 		if _elapsed >= duration_sec:

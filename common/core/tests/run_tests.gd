@@ -198,3 +198,56 @@ func test_tweak_panel_builds_rows() -> void:
 	check(panel._macro_sliders.size() == model.get_schema()["macros"].size(), "one slider per macro")
 	panel.free()
 	model.free()
+
+# ---------------- director ----------------
+
+const Director = preload("res://core/director.gd")
+
+func _dir_cfg() -> Dictionary:
+	return {"enabled": true, "period_sec": 60.0, "amplitude": 0.3, "macros": ["energy", "bogus"]}
+
+func test_director_disabled_by_default() -> void:
+	var d = Director.from_config({}, {"energy": 0.5}, RNGService.new(3))
+	check_eq(d.enabled, false, "empty config -> disabled")
+	var macros := {"energy": 0.5}
+	check_eq(d.apply(macros), false, "disabled apply is a no-op")
+	check_eq(macros["energy"], 0.5, "macros untouched when disabled")
+
+func test_director_deterministic_and_clamped() -> void:
+	var a = Director.from_config(_dir_cfg(), {"energy": 0.9}, RNGService.new(7))
+	var b = Director.from_config(_dir_cfg(), {"energy": 0.9}, RNGService.new(7))
+	for i in 50:
+		a.tick(0.5)
+		b.tick(0.5)
+		var va: float = a.current("energy")
+		check_eq(va, b.current("energy"), "same seed -> same drift curve")
+		check(va >= 0.0 and va <= 1.0, "drift clamped to 0..1")
+
+func test_director_ignores_unknown_macros() -> void:
+	var d = Director.from_config(_dir_cfg(), {"energy": 0.5}, RNGService.new(7))
+	check_eq(d.macro_names.size(), 1, "unknown macro 'bogus' dropped")
+
+func test_director_apply_and_rebase() -> void:
+	var d = Director.from_config(_dir_cfg(), {"energy": 0.5}, RNGService.new(7))
+	d.tick(13.0)
+	var macros := {"energy": 0.5}
+	check_eq(d.apply(macros), true, "apply reports change")
+	check(absf(macros["energy"] - 0.5) > 0.0001, "macro drifted from base")
+	d.rebase("energy", 0.9)
+	d.apply(macros)
+	var hi: float = macros["energy"]
+	d.rebase("energy", 0.1)
+	d.apply(macros)
+	check(hi > macros["energy"], "rebase shifts the curve's center")
+
+func test_preset_roundtrip_director() -> void:
+	var path := "/tmp/vx_test_director.json"
+	var err := PIO.save_preset(path, "demo", 1, 10.0, {}, {}, {}, _dir_cfg())
+	check_eq(err, OK, "save with director ok")
+	var res := PIO.load_preset(path, _demo_schema(), "demo")
+	check(res["ok"], "load ok")
+	check_eq(res["preset"]["director"]["period_sec"], 60.0, "director roundtrips")
+	# absent director -> empty dict default
+	PIO.save_preset(path, "demo", 1, 10.0, {}, {}, {})
+	var res2 := PIO.load_preset(path, _demo_schema(), "demo")
+	check_eq(res2["preset"]["director"], {}, "missing director defaults to {}")
