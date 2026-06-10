@@ -3,3 +3,6 @@
 renders/
 *.avi
 *.tmp
+
+# render-time artifact written by radio render scripts
+override.cfg
