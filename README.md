@@ -68,22 +68,44 @@ hit Save: your preset has equal standing with the shipped twelve.
 
 ### Variation presets
 
-Each model ships two named variants:
+Each model ships two named variants. Descriptions below are from their actual renders.
 
-| Model | Preset | Character |
-|---|---|---|
-| radial_burst | `gentle` | Sparse ice-toned bursts, slow 8s period, no mirror |
-| radial_burst | `cataclysm` | Max-energy quad-mirror blast, high density, spread chaos |
-| fluid_swirl | `lava_lamp` | Slow magma blobs, high viscosity, deep reds/oranges |
-| fluid_swirl | `maelstrom` | Violent neon turbulence, 8 vortices, fast decay |
-| peg_cascade | `zen_garden` | Sparse mono rings, slow ball rate, calm rebounds |
-| peg_cascade | `pachinko_riot` | Dense neon chaos, max balls, spinning hubs, chain explosions |
-| chromatic_cascade | `watercolor` | Soft lingering ink pools, slow play, subtle ball wakes |
-| chromatic_cascade | `paintstorm` | Saturated neon ink chaos, max shockwaves |
-| matter_cycle | `slow_genesis` | Sparse mono polygons, gentle turbulence, slow cycle |
-| matter_cycle | `grinder` | Fast dense spectrum churn, rapid condensation |
-| supernova_orbit | `slow_burn` | Long purple-void buildup to single massive detonation |
-| supernova_orbit | `strobe_core` | Rapid emerald detonation cycles every few seconds |
+**radial_burst**
+- `gentle` — a soft sea-urchin of fine ice-blue streaks breathing out of the dark every
+  8 seconds, no mirror, low density. Delicate, almost botanical.
+- `cataclysm` — relentless full-screen quad-mirrored detonations every 3 seconds; dense
+  white streak fields with heavy spread chaos and fast-fading trails. Pure violence.
+
+**fluid_swirl**
+- `lava_lamp` — thick, slow magma: deep reds and incandescent yellows rising and folding
+  like flame in oil, high viscosity so shapes linger and ooze.
+- `maelstrom` — saturated cyan/magenta/yellow turbulence at 8 vortices; the whole canvas
+  shreds and recombines continuously, edge-to-edge color with no rest.
+
+**peg_cascade**
+- `zen_garden` — grayscale meditation: dim mono pegs in loose rings, occasional white
+  balls drifting through with soft glows, sparse pops. The calm one.
+- `pachinko_riot` — hot-pink and cyan pegs, fast ball stream, spinning hubs, constant
+  chain explosions carving holes that respawn and refill.
+
+**chromatic_cascade**
+- `watercolor` — luminous pastel pools (teal/pink/white) spreading slowly beneath the
+  pegs; subtle ball wakes tint the wash; near-permanent dye so the painting accumulates.
+- `paintstorm` — neon pegs over storm-front clouds of magenta and white ink; yellow-green
+  balls; big shockwaves smear the whole field every chain.
+
+**matter_cycle**
+- `slow_genesis` — long stretches of near-empty black; lone white wireframe polygons
+  drift down, quietly pile, and only rarely shatter. Minimalist and patient — it earns
+  its moments.
+- `grinder` — multicolor wireframes shattering on contact into white-hot particle spray;
+  condensation rings fire constantly; matter churns through the full cycle in seconds.
+
+**supernova_orbit**
+- `slow_burn` — three violet-and-teal spiral arms feed a purple core through one long,
+  ominous 30-second charge toward a single massive detonation (void palette).
+- `strobe_core` — emerald accretion at maximum inflow with a hair-trigger core:
+  detonation rings every few seconds, each clearing the disk to start again.
 
 ## Tests
 
