@@ -85,6 +85,8 @@ func get_schema() -> Dictionary:
 			PS.f("core_gravity", 900000.0, 0.0, 3000000.0),
 			PS.i("debris_cap", 80, 10, 200),
 			PS.f("hue_drift", 0.0, 0.0, 90.0),
+			PS.f("pulse_depth", 0.08, 0.0, 0.25),
+			PS.f("pulse_rate", 1.0, 0.0, 2.0),
 		],
 	}
 
@@ -365,6 +367,8 @@ func _process(delta: float) -> void:
 		cmat.set_shader_parameter("charge", charge)
 		cmat.set_shader_parameter("t", sim_t)
 		cmat.set_shader_parameter("base_col", _hue_rotated(pal["core"]))
+		cmat.set_shader_parameter("pulse_depth", params["pulse_depth"])
+		cmat.set_shader_parameter("pulse_rate", params["pulse_rate"])
 	# --- Swarm: gravity sums over all cores; absorption goes to nearest core ---
 	var absorbed_by: Array = []
 	for _c in cores:
