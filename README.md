@@ -55,6 +55,23 @@ JSON files in `<model>/presets/`. Format:
 - `jitter` — seeded per-param noise: `{"pct": 15}` (±15%) or `{"abs": 2}` (±2 units)
 - Same preset + different `seed` = visually related but uniquely different variant
 
+### Director
+
+An optional preset key that drifts selected macros over time via smooth seeded curves,
+keeping long-form renders visually varied without manual keyframing:
+
+```json
+"director": {"enabled": true, "period_sec": 90.0, "amplitude": 0.3,
+             "macros": ["accretion", "chaos", "duality"]}
+```
+
+Each listed macro follows `clamp(base + amplitude × drift(t), 0, 1)` where `base` is
+the preset's macro value and `drift(t)` is two incommensurate seeded sines — smooth,
+bounded, reproducible. The director ticks in `SimModel._process` and re-resolves live
+params at 4 Hz. When the director is active, the tweak panel shows a cyan indicator;
+user edits to a macro slider **rebase** that macro's center, so manual adjustments
+still take effect and accumulate correctly.
+
 ### Models vs presets vs seeds
 
 Presets are pure data — every preset of a model runs the exact same code through the
@@ -117,12 +134,17 @@ button. Descriptions below are from their actual renders.
   ominous 30-second charge toward a single massive detonation (void palette).
 - `strobe_core` — emerald accretion at maximum inflow with a hair-trigger core:
   detonation rings every few seconds, each clearing the disk to start again.
+- `odyssey` — 5-minute director-driven journey: two gravitationally interacting cores
+  fission, orbit, and merge while an accumulating wireframe debris belt rings the
+  blast sites; solar palette hue drifts 70° across the run so early amber warmth
+  cools through teal by the end. The director continuously modulates accretion, chaos,
+  and duality over 90-second cycles — no two minutes look the same.
 
 ## Tests
 
     godot --headless --path radial_burst --script res://core/tests/run_tests.gd
 
-Expected: `TESTS: 17 run, 0 failed`
+Expected: `TESTS: 22 run, 0 failed`
 
 ## Layout
 

@@ -20,6 +20,35 @@ jump if you want videos that match the code.
 
 ## Tags
 
+### v1.1 — long-form milestone 1 (2026-06-09)
+
+Long-form supernova: director layer, binary cores, persistent consequences, hue drift.
+
+- **Director layer** (`common/core/director.gd` + SimModel/preset_io/tweak_panel
+  integration): model-agnostic framework feature. Preset key `"director"` drives
+  smooth seeded macro drift over time (2-octave sine noise, configurable period and
+  amplitude). Deterministic (stream-seeded per macro), clamped 0..1, rebased on user
+  edits. Off by default — all v1.0 presets are unaffected. 5 new unit tests; total
+  suite: 22 run, 0 failed.
+- **supernova_orbit — binary cores:** core state is now a 1–2 element array. Lone
+  core wanders with seeded smooth noise; at critical mass, `split_chance` (macro
+  `duality`) triggers fission into two half-charged cores that orbit under mutual
+  gravity, both accreting. Cores within `merge_radius` merge (momentum-averaged); if
+  merged charge ≥ 1, immediate detonation. Binary detonation: detonated core removed,
+  survivor gets kick, system returns to lone-core.
+- **Persistent debris belt:** detonation no longer clears existing debris. New ejecta
+  launches with an orbit-biased velocity (outward + tangential mix) so survivors
+  settle into an accumulating belt. Total capped at `debris_cap` (default 80); oldest
+  culled beyond cap.
+- **Soft trail wipe:** hard 3-frame viewport clear replaced with a 0.6 s fade-rect
+  alpha ramp — old trails dim fast but leave visible history on detonation.
+- **Hue drift** (`hue_drift`, deg/min, default 0): particle, debris, and core colors
+  rotate hue slowly over time — 14°/min gives a 70° palette shift across a 5-minute
+  render, cycling warm→cool→warm.
+- **`odyssey` preset** (`supernova_orbit/presets/odyssey.json`): 300 s director-driven
+  long-form. Director period 90 s, amplitude 0.3, drifting accretion/chaos/duality.
+  Macro `duality` 0.6 (fission-biased), `hue_drift` override 14°/min. Seed 31416.
+
 ### v1.0 — complete baseline (2026-06-09)
 
 The full spec implementation, all verified against rendered frames:

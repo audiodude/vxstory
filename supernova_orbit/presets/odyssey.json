@@ -1,0 +1,10 @@
+{
+  "model": "supernova_orbit",
+  "seed": 31416,
+  "duration_sec": 300.0,
+  "macros": {"accretion": 0.7, "critical_mass": 0.45, "detonation": 0.7, "chaos": 0.5, "duality": 0.6},
+  "overrides": {"hue_drift": 14.0, "trail_persist": 0.065, "glow": 0.15},
+  "jitter": {},
+  "director": {"enabled": true, "period_sec": 90.0, "amplitude": 0.3,
+               "macros": ["accretion", "chaos", "duality"]}
+}
