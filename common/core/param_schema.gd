@@ -35,6 +35,9 @@ static func e(p_name: String, default: String, options: PackedStringArray, extra
 static func c(p_name: String, default: Color, extra := {}) -> Dictionary:
 	return _base(p_name, "color", default, extra)
 
+static func s(p_name: String, default: String, extra := {}) -> Dictionary:
+	return _base(p_name, "string", default, extra)
+
 static func macro_default(schema: Dictionary, macro_name: String) -> float:
 	for m in schema["macros"]:
 		if m["name"] == macro_name:

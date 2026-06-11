@@ -168,6 +168,37 @@ func test_preset_missing_file_fails() -> void:
 	var res := PIO.load_preset("/tmp/vx_does_not_exist.json", _demo_schema(), "demo")
 	check(not res["ok"], "missing file is an error")
 
+# ---------------- string param type ----------------
+
+func _string_schema() -> Dictionary:
+	return {
+		"macros": [],
+		"params": [
+			PS.s("label", "HELLO"),
+		],
+	}
+
+func test_string_default_passthrough() -> void:
+	var rng := RNGService.new(1).stream("jitter")
+	var out := MM.resolve(_string_schema(), {}, {}, {}, rng)
+	check_eq(out["label"], "HELLO", "string default passes through resolve")
+
+func test_string_override_coerces_to_str() -> void:
+	var rng := RNGService.new(1).stream("jitter")
+	var out := MM.resolve(_string_schema(), {}, {"label": 42}, {}, rng)
+	check_eq(out["label"], "42", "non-string override coerced to str")
+
+func test_string_preset_roundtrip() -> void:
+	var path := "/tmp/vx_test_string_preset.json"
+	var schema := _string_schema()
+	var err := PIO.save_preset(path, "demo_str", 1, 5.0, {}, {"label": "TEST TEXT"}, {})
+	check_eq(err, OK, "save with string override ok")
+	var res := PIO.load_preset(path, schema, "demo_str")
+	check(res["ok"], "load ok")
+	var rng := RNGService.new(1).stream("jitter")
+	var out := MM.resolve(schema, {}, res["preset"]["overrides"], {}, rng)
+	check_eq(out["label"], "TEST TEXT", "string override roundtrips through preset")
+
 # ---------------- render driver ----------------
 
 const RD = preload("res://core/render_driver.gd")

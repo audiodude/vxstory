@@ -168,6 +168,13 @@ func _build_param_row(vbox: VBoxContainer, p: Dictionary) -> void:
 			row.add_child(cp)
 			entry["control"] = cp
 			entry["set_value"] = func(v): cp.color = v
+		"string":
+			var le := LineEdit.new()
+			le.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			le.text_submitted.connect(func(t): _set_override(p, t))
+			row.add_child(le)
+			entry["control"] = le
+			entry["set_value"] = func(v): le.text = str(v)
 	var clear := Button.new()
 	clear.text = "✕"
 	clear.tooltip_text = "unpin (remove override)"

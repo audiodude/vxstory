@@ -53,4 +53,6 @@ static func _coerce(p: Dictionary, v):
 			if v is String:
 				return Color.html(v)
 			return v
+		"string":
+			return str(v)
 	return v
