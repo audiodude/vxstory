@@ -1,0 +1,8 @@
+{
+  "model": "text_ident",
+  "seed": 1,
+  "duration_sec": 12,
+  "macros": {"intensity": 0.5},
+  "overrides": {},
+  "jitter": {}
+}
