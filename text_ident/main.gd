@@ -61,7 +61,11 @@ func restart() -> void:
 	label.autowrap_mode = TextServer.AUTOWRAP_OFF
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	label.set_anchors_preset(Control.PRESET_FULL_RECT)
+	# Anchors are meaningless under a Node2D parent (no Control ancestor), so
+	# size the label to the full 1920x1080 design space explicitly; the
+	# center alignments then center the text within it.
+	label.position = Vector2.ZERO
+	label.size = Vector2(1920, 1080)
 
 	add_child(label)
 	_label_base_pos = Vector2.ZERO
