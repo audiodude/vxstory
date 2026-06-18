@@ -103,6 +103,10 @@ button. Descriptions below are from their actual renders.
   8 seconds, no mirror, low density. Delicate, almost botanical.
 - `cataclysm` — relentless full-screen quad-mirrored detonations every 3 seconds; dense
   white streak fields with heavy spread chaos and fast-fading trails. Pure violence.
+- `pulsar` — 5-minute long-form: four sympathetically-coupled burst sources on
+  the station's `danger` palette (red/white/blue), drifting calm → riot → calm
+  over 150s director cycles while a high-coupling ignition ripples a chain of
+  blooms across the field; hue drifts ~50° across the run.
 
 **fluid_swirl**
 - `lava_lamp` — thick, slow magma: deep reds and incandescent yellows rising and folding

@@ -1,0 +1,30 @@
+{
+  "model": "radial_burst",
+  "seed": 204,
+  "duration_sec": 300.0,
+  "macros": {
+    "energy": 0.35,
+    "density": 0.4,
+    "symmetry": 0.3,
+    "grit": 0.45,
+    "coupling": 0.2
+  },
+  "overrides": {
+    "source_count": 4,
+    "palette": "danger",
+    "hue_drift": 10.0,
+    "loop_period": 4.0,
+    "sympathy_radius": 560.0,
+    "ripple_speed": 1500.0,
+    "trail_persist": 0.08,
+    "glow": 0.6,
+    "mirror": "off"
+  },
+  "jitter": {},
+  "director": {
+    "enabled": true,
+    "period_sec": 150.0,
+    "amplitude": 0.4,
+    "macros": ["energy", "density", "coupling"]
+  }
+}
