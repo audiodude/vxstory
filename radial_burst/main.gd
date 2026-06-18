@@ -234,6 +234,7 @@ func _ignite(i: int, depth: int) -> void:
 		var ang := s.randf_range(0.0, TAU)
 		var at := s.randf_range(0.1, 0.5)
 		var dist: float = params["burst_speed"] * 0.55 * at
+		e.amount = maxi(int(params["particle_count"] * params["subburst_scale"] / maxf(1.0, float(src["subs"].size()))), 50)
 		e.process_material = _make_process_material(0.45, src["base"])
 		e.position = src["pos"] + Vector2.from_angle(ang) * dist
 		e.restart()
@@ -250,7 +251,14 @@ func _ignite(i: int, depth: int) -> void:
 			positions.append(sc["pos"])
 		var caught := Cascade.flood(positions, i, params["sympathy"], params["sympathy_radius"], s)
 		for c in caught:
-			pending.append({"at": sim_t + c["dist"] / maxf(params["ripple_speed"], 1.0), "idx": int(c["idx"])})
+			var cidx := int(c["idx"])
+			var already := false
+			for pe in pending:
+				if int(pe["idx"]) == cidx:
+					already = true
+					break
+			if not already:
+				pending.append({"at": sim_t + c["dist"] / maxf(params["ripple_speed"], 1.0), "idx": cidx})
 
 func _draw_rings() -> void:
 	for r in rings:
