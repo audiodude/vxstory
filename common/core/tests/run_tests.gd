@@ -306,3 +306,29 @@ func test_hue_180_is_opposite() -> void:
 func test_hue_preserves_alpha() -> void:
 	var r := Hue.rotated(Color(1, 1, 1, 0.4), 90.0)
 	check_eq(r.a, 0.4, "alpha preserved")
+
+# ---------------- cascade ----------------
+
+const Cascade = preload("res://core/cascade.gd")
+
+func _line5() -> Array:
+	# 5 points in a row, 100 px apart
+	return [Vector2(0, 0), Vector2(100, 0), Vector2(200, 0), Vector2(300, 0), Vector2(400, 0)]
+
+func test_cascade_zero_coupling_no_catch() -> void:
+	var got := Cascade.flood(_line5(), 0, 0.0, 150.0, RNGService.new(1).stream("c"))
+	check_eq(got.size(), 0, "coupling 0 -> nobody catches")
+
+func test_cascade_full_coupling_chains_within_radius() -> void:
+	# radius 150 links 100px neighbors -> chain reaches all 4 from idx 0
+	var got := Cascade.flood(_line5(), 0, 1.0, 150.0, RNGService.new(1).stream("c"))
+	check_eq(got.size(), 4, "coupling 1 chains down the line")
+
+func test_cascade_radius_below_gap_no_catch() -> void:
+	var got := Cascade.flood(_line5(), 0, 1.0, 50.0, RNGService.new(1).stream("c"))
+	check_eq(got.size(), 0, "radius below neighbor gap -> no catch")
+
+func test_cascade_deterministic() -> void:
+	var a := Cascade.flood(_line5(), 0, 0.5, 150.0, RNGService.new(7).stream("c"))
+	var b := Cascade.flood(_line5(), 0, 0.5, 150.0, RNGService.new(7).stream("c"))
+	check_eq(a.size(), b.size(), "same seed -> same catch count")
