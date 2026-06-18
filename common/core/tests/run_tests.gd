@@ -282,3 +282,27 @@ func test_preset_roundtrip_director() -> void:
 	PIO.save_preset(path, "demo", 1, 10.0, {}, {}, {})
 	var res2 := PIO.load_preset(path, _demo_schema(), "demo")
 	check_eq(res2["preset"]["director"], {}, "missing director defaults to {}")
+
+# ---------------- hue ----------------
+
+const Hue = preload("res://core/hue.gd")
+
+func test_hue_zero_is_identity() -> void:
+	var c := Color.from_hsv(0.2, 0.5, 0.8)
+	var r := Hue.rotated(c, 0.0)
+	check(absf(r.h - c.h) < 0.001, "0 deg keeps hue")
+	check(absf(r.s - c.s) < 0.001 and absf(r.v - c.v) < 0.001, "0 deg keeps sat/val")
+
+func test_hue_360_wraps_to_same() -> void:
+	var c := Color.from_hsv(0.3, 0.7, 0.9)
+	var r := Hue.rotated(c, 360.0)
+	check(absf(r.h - c.h) < 0.001, "360 deg wraps to same hue")
+
+func test_hue_180_is_opposite() -> void:
+	var c := Color.from_hsv(0.0, 1.0, 1.0)  # h = 0
+	var r := Hue.rotated(c, 180.0)
+	check(absf(r.h - 0.5) < 0.001, "180 deg -> h = 0.5")
+
+func test_hue_preserves_alpha() -> void:
+	var r := Hue.rotated(Color(1, 1, 1, 0.4), 90.0)
+	check_eq(r.a, 0.4, "alpha preserved")
