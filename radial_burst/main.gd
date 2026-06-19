@@ -23,12 +23,15 @@ const PALETTES := {
 	"silver": [Color(1, 1, 1), Color(0.78, 0.82, 0.88)],
 	"bone": [Color(1, 0.97, 0.9), Color(0.9, 0.82, 0.7)],
 	"ice": [Color(0.85, 0.95, 1), Color(0.6, 0.8, 1)],
-	# cribbed from radio.dangerthirdrail.com (offline.html --red + board colors)
+	# the station's signature red, cribbed from radio.dangerthirdrail.com offline.html
 	"danger": [Color("#ff2a2a"), Color(1, 1, 1), Color(0.45, 0.55, 1.0)],
-	"board": [
+	# the full galton-board palette, verbatim from
+	# radio.dangerthirdrail.com/scripts/main.gd ALL_COLORS (12 vibrant hues)
+	"galton": [
 		Color(1.00, 0.20, 0.20), Color(0.15, 0.85, 1.00), Color(1.00, 0.95, 0.15),
 		Color(0.55, 0.20, 1.00), Color(1.00, 0.40, 0.10), Color(0.10, 1.00, 0.45),
-		Color(1.00, 0.20, 0.55), Color(0.00, 1.00, 0.85),
+		Color(1.00, 0.20, 0.55), Color(0.20, 0.40, 1.00), Color(1.00, 0.65, 0.80),
+		Color(0.00, 1.00, 0.85), Color(0.90, 0.70, 0.10), Color(0.75, 0.55, 1.00),
 	],
 }
 
@@ -45,6 +48,11 @@ func get_schema() -> Dictionary:
 		"params": [
 			PS.f("loop_period", 5.0, 2.0, 12.0, {"live": false, "jitter": {"pct": 10.0}}),
 			PS.i("source_count", 1, 1, 6, {"live": false}),
+			# Build envelope: when build_secs > 0, bursts ramp from small+infrequent
+			# to large+frequent over build_secs (then hold). 0 disables it (constant).
+			PS.f("build_secs", 0.0, 0.0, 600.0),
+			PS.f("build_size_start", 0.25, 0.05, 1.0),
+			PS.f("build_period_start", 9.0, 1.0, 20.0),
 			PS.i("particle_count", 4500, 500, 20000, {"live": false, "macro": {"name": "density", "lo": 2000, "hi": 7000}}),
 			PS.f("burst_speed", 260.0, 50.0, 900.0, {"live": false, "macro": {"name": "energy", "lo": 120.0, "hi": 400.0}, "jitter": {"pct": 8.0}}),
 			PS.f("speed_spread", 0.55, 0.0, 0.9, {"live": false, "macro": {"name": "grit", "lo": 0.25, "hi": 0.85}}),
@@ -64,7 +72,7 @@ func get_schema() -> Dictionary:
 			PS.e("mirror", "horizontal", PackedStringArray(["off", "horizontal", "quad"]), {"live": false}),
 			PS.f("mirror_mix", 0.55, 0.0, 1.0, {"macro": {"name": "symmetry", "lo": 0.0, "hi": 0.9}}),
 			PS.f("glow", 0.35, 0.0, 3.0),
-			PS.e("palette", "silver", PackedStringArray(["silver", "bone", "ice", "danger", "board"]), {"live": false}),
+			PS.e("palette", "silver", PackedStringArray(["silver", "bone", "ice", "danger", "galton"]), {"live": false}),
 		],
 	}
 
@@ -104,10 +112,11 @@ func _build() -> void:
 	sim_vp.add_child(rings_node)
 
 	var pal: Array = PALETTES[params["palette"]]
+	var order := _shuffled_indices(pal.size())  # vary source hues per seed
 	var positions := _place_sources()
 	var n := positions.size()
 	for i in n:
-		var base: Color = pal[i % pal.size()]
+		var base: Color = pal[order[i % pal.size()]]
 		var main := _make_emitter(int(params["particle_count"]), 1.0, base)
 		main.position = positions[i]
 		sim_vp.add_child(main)
@@ -117,7 +126,7 @@ func _build() -> void:
 			var e := _make_emitter(amt, 0.45, base)
 			sim_vp.add_child(e)
 			subs.append(e)
-		var period: float = params["loop_period"] * s.randf_range(0.85, 1.15)
+		var period: float = _ignite_period()
 		# phase-offset so sources fire staggered; source 0 fires almost immediately
 		sources.append({"pos": positions[i], "base": base, "main": main, "subs": subs,
 			"timer": period - period * float(i) / float(n), "period": period})
@@ -164,6 +173,30 @@ func _place_sources() -> Array:
 		out.append(center + Vector2.from_angle(ang) * 360.0 * s.randf_range(0.85, 1.1))
 	return out
 
+func _shuffled_indices(count: int) -> Array:
+	var order := []
+	for i in count:
+		order.append(i)
+	for k in range(count - 1, 0, -1):  # seeded Fisher-Yates
+		var j := s.randi() % (k + 1)
+		var tmp = order[k]
+		order[k] = order[j]
+		order[j] = tmp
+	return order
+
+# Build-envelope progress 0..1 (smoothstepped). 1.0 (full) when disabled.
+func _build_p() -> float:
+	var bs: float = params["build_secs"]
+	if bs <= 0.0:
+		return 1.0
+	var t := clampf(sim_t / bs, 0.0, 1.0)
+	return t * t * (3.0 - 2.0 * t)
+
+# Inter-burst period: long (build_period_start) early -> short (loop_period) late.
+func _ignite_period() -> float:
+	var per := lerpf(params["build_period_start"], params["loop_period"], _build_p())
+	return per * s.randf_range(0.85, 1.15)
+
 func _make_emitter(amount: int, scale_mul: float, base: Color) -> GPUParticles2D:
 	var g := GPUParticles2D.new()
 	g.amount = maxi(amount, 8)
@@ -181,21 +214,21 @@ func _make_emitter(amount: int, scale_mul: float, base: Color) -> GPUParticles2D
 	g.process_material = _make_process_material(scale_mul, base)
 	return g
 
-func _make_process_material(scale_mul: float, base: Color) -> ParticleProcessMaterial:
+func _make_process_material(scale_mul: float, base: Color, size_mul := 1.0) -> ParticleProcessMaterial:
 	var pm := ParticleProcessMaterial.new()
 	pm.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_SPHERE_SURFACE
 	pm.emission_sphere_radius = 4.0
 	pm.direction = Vector3(1, 0, 0)
 	pm.spread = 180.0
 	pm.gravity = Vector3.ZERO
-	var spd: float = params["burst_speed"] * scale_mul
+	var spd: float = params["burst_speed"] * scale_mul * size_mul
 	pm.initial_velocity_min = spd * (1.0 - params["speed_spread"])
 	pm.initial_velocity_max = spd * (1.0 + params["speed_spread"])
 	pm.damping_min = params["damping"] * 0.6
 	pm.damping_max = params["damping"] * 1.4
 	pm.particle_flag_align_y = true
-	pm.scale_min = params["streak_len"] / 128.0 * 0.5
-	pm.scale_max = params["streak_len"] / 128.0 * 1.3
+	pm.scale_min = params["streak_len"] * size_mul / 128.0 * 0.5
+	pm.scale_max = params["streak_len"] * size_mul / 128.0 * 1.3
 	pm.lifetime_randomness = 0.45
 	var col := Hue.rotated(base, params["hue_drift"] * sim_t / 60.0)
 	var grad := Gradient.new()
@@ -224,32 +257,37 @@ func _src_color(src: Dictionary) -> Color:
 
 func _ignite(i: int, depth: int) -> void:
 	var src: Dictionary = sources[i]
-	# re-read drifted params so energy/density/hue take effect on each burst
-	src["main"].amount = maxi(int(params["particle_count"]), 8)
+	var p := _build_p()
+	var sz := lerpf(params["build_size_start"], 1.0, p)
+	# re-read drifted params so energy/density/hue take effect each burst, and
+	# scale by the build envelope so bursts start small and grow over the run
+	src["main"].amount = maxi(int(params["particle_count"] * sz), 8)
 	src["main"].lifetime = params["particle_life"]
-	src["main"].process_material = _make_process_material(1.0, src["base"])
+	src["main"].process_material = _make_process_material(1.0, src["base"], sz)
 	src["main"].position = src["pos"]
 	src["main"].restart()
 	for e in src["subs"]:
 		var ang := s.randf_range(0.0, TAU)
 		var at := s.randf_range(0.1, 0.5)
-		var dist: float = params["burst_speed"] * 0.55 * at
-		e.amount = maxi(int(params["particle_count"] * params["subburst_scale"] / maxf(1.0, float(src["subs"].size()))), 50)
-		e.process_material = _make_process_material(0.45, src["base"])
+		var dist: float = params["burst_speed"] * 0.55 * at * sz
+		e.amount = maxi(int(params["particle_count"] * params["subburst_scale"] / maxf(1.0, float(src["subs"].size())) * sz), 50)
+		e.process_material = _make_process_material(0.45, src["base"], sz)
 		e.position = src["pos"] + Vector2.from_angle(ang) * dist
 		e.restart()
-	for ri in int(params["ring_count"]):
+	var n_rings := int(round(params["ring_count"] * lerpf(0.4, 1.0, p)))
+	for ri in n_rings:
 		rings.append({"center": src["pos"], "r": 10.0,
 			"speed": params["ring_speed"] * s.randf_range(0.7, 1.3),
 			"alpha": 1.0, "color": _src_color(src)})
 	src["timer"] = 0.0
-	src["period"] = params["loop_period"] * s.randf_range(0.85, 1.15)
-	# sympathetic cascade (only from a primary ignition)
-	if sources.size() > 1 and depth == 0 and params["sympathy"] > 0.0:
+	src["period"] = _ignite_period()
+	# sympathetic cascade grows with the build: rare/isolated early, chaining late
+	var coupling: float = params["sympathy"] * p
+	if sources.size() > 1 and depth == 0 and coupling > 0.0:
 		var positions := []
 		for sc in sources:
 			positions.append(sc["pos"])
-		var caught := Cascade.flood(positions, i, params["sympathy"], params["sympathy_radius"], s)
+		var caught := Cascade.flood(positions, i, coupling, params["sympathy_radius"], s)
 		for c in caught:
 			var cidx := int(c["idx"])
 			var already := false
