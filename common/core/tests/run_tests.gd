@@ -283,6 +283,32 @@ func test_preset_roundtrip_director() -> void:
 	var res2 := PIO.load_preset(path, _demo_schema(), "demo")
 	check_eq(res2["preset"]["director"], {}, "missing director defaults to {}")
 
+# ---------------- preset modulators ----------------
+
+func test_preset_modulators_roundtrip_and_warn() -> void:
+	var path := "/tmp/vx_test_mod.json"
+	var fa := FileAccess.open(path, FileAccess.WRITE)
+	fa.store_string(JSON.stringify({
+		"model": "demo",
+		"modulators": {
+			"tween": [{"name": "b", "secs": 5.0, "targets": [{"to": "energy", "amount": 0.5}]}],
+			"envelope": [{"name": "f", "event": "hit", "targets": [{"to": "bogusparam", "amount": 1.0}]}],
+		},
+	}))
+	fa.close()
+	var res := PIO.load_preset(path, _demo_schema(), "demo")
+	check(res["ok"], "loads with modulators")
+	check_eq(res["preset"]["modulators"]["tween"][0]["secs"], 5.0, "modulators roundtrip")
+	check(res["warnings"].size() >= 1, "unknown modulator target warns")
+
+func test_preset_modulators_absent_defaults_empty() -> void:
+	var path := "/tmp/vx_test_mod2.json"
+	var fa := FileAccess.open(path, FileAccess.WRITE)
+	fa.store_string(JSON.stringify({"model": "demo"}))
+	fa.close()
+	var res := PIO.load_preset(path, _demo_schema(), "demo")
+	check_eq(res["preset"]["modulators"], {}, "absent modulators -> {}")
+
 # ---------------- hue ----------------
 
 const Hue = preload("res://core/hue.gd")
