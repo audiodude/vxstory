@@ -332,3 +332,33 @@ func test_cascade_deterministic() -> void:
 	var a := Cascade.flood(_line5(), 0, 0.5, 150.0, RNGService.new(7).stream("c"))
 	var b := Cascade.flood(_line5(), 0, 0.5, 150.0, RNGService.new(7).stream("c"))
 	check_eq(a.size(), b.size(), "same seed -> same catch count")
+
+# ---------------- mod_sources ----------------
+
+const MS = preload("res://core/mod_sources.gd")
+
+func test_modsrc_lfo_sine_range_and_phase() -> void:
+	check_eq(MS.lfo(0.0, 4.0, "sine"), 0.0, "sine at t=0 is 0")
+	check_eq(MS.lfo(1.0, 4.0, "sine"), 1.0, "sine at quarter period is 1")
+	check_eq(MS.lfo(0.0, 0.0, "sine"), 0.0, "rate 0 -> 0 (no div by zero)")
+
+func test_modsrc_lfo_drift_bounded() -> void:
+	for i in 50:
+		var v := MS.lfo(float(i) * 0.37, 5.0, "drift")
+		check(v >= -1.0001 and v <= 1.0001, "drift stays within [-1,1]")
+
+func test_modsrc_tween_endpoints_and_curve() -> void:
+	check_eq(MS.tween(0.0, 10.0, "linear", 2.0, 8.0), 2.0, "t=0 -> from")
+	check_eq(MS.tween(10.0, 10.0, "linear", 2.0, 8.0), 8.0, "t=secs -> to")
+	check_eq(MS.tween(99.0, 10.0, "linear", 2.0, 8.0), 8.0, "past end holds at to")
+	check_eq(MS.tween(5.0, 10.0, "linear", 2.0, 8.0), 5.0, "linear midpoint")
+	check_eq(MS.tween(5.0, 10.0, "ease_in", 0.0, 1.0), 0.25, "ease_in midpoint = 0.25")
+
+func test_modsrc_envelope_attack_decay() -> void:
+	check_eq(MS.envelope(-1.0, 0.1, 0.1, 1.0), 0.0, "before trigger -> 0")
+	check_eq(MS.envelope(0.05, 0.1, 0.1, 1.0), 0.5, "mid-attack linear")
+	check_eq(MS.envelope(0.1, 0.1, 0.1, 1.0), 1.0, "end of attack -> peak")
+	check_eq(MS.envelope(0.15, 0.1, 0.1, 1.0), 0.5, "mid-decay linear")
+	check_eq(MS.envelope(0.2, 0.1, 0.1, 1.0), 0.0, "end of decay -> 0")
+	check_eq(MS.envelope(1.0, 0.1, 0.1, 1.0), 0.0, "after -> 0")
+	check_eq(MS.envelope(0.0, 0.0, 1.0, 1.0), 1.0, "zero attack -> instant peak")
