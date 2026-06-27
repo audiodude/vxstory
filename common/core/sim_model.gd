@@ -60,11 +60,18 @@ func _ready() -> void:
 	resolve_and_restart()
 	if not movie_mode:
 		_attach_panel()
+		_attach_scene_tools()
 
 func _attach_panel() -> void:
 	var TweakPanel = load("res://core/tweak_panel.gd")
 	if TweakPanel != null:
 		add_child(TweakPanel.new(self))
+
+func _attach_scene_tools() -> void:
+	var Watcher = load("res://core/scene_watcher.gd")
+	var w = Watcher.new()
+	add_child(w)
+	w.setup(self, preset_path)
 
 func adopt_preset(p: Dictionary) -> void:
 	seed_value = int(p["seed"])

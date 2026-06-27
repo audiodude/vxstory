@@ -463,3 +463,14 @@ func test_scrub_sets_clocks() -> void:
 	check_eq(m.mod_stack.t, 5.0, "scrub sets the modulation clock")
 	check_eq(m.sim_t, 5.0, "scrub sets sim_t via _on_scrub override")
 	m.free()
+
+# ---------------- scene watcher ----------------
+
+func test_scene_watcher_is_newer() -> void:
+	var W = load("res://core/scene_watcher.gd")
+	var w = W.new()
+	w._last_mtime = 100
+	check_eq(w._is_newer(200), true, "newer mtime -> changed")
+	check_eq(w._is_newer(100), false, "equal mtime -> unchanged")
+	check_eq(w._is_newer(50), false, "older mtime -> unchanged")
+	w.free()
