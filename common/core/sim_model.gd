@@ -72,6 +72,8 @@ func _attach_scene_tools() -> void:
 	var w = Watcher.new()
 	add_child(w)
 	w.setup(self, preset_path)
+	var Timeline = load("res://core/timeline.gd")
+	add_child(Timeline.new(self))
 
 func adopt_preset(p: Dictionary) -> void:
 	seed_value = int(p["seed"])

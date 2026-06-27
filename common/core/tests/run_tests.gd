@@ -474,3 +474,18 @@ func test_scene_watcher_is_newer() -> void:
 	check_eq(w._is_newer(100), false, "equal mtime -> unchanged")
 	check_eq(w._is_newer(50), false, "older mtime -> unchanged")
 	w.free()
+
+# ---------------- timeline ----------------
+
+func test_timeline_time_to_x() -> void:
+	var T = load("res://core/timeline.gd")
+	check_eq(T.time_to_x(0.0, 10.0, 100.0), 0.0, "t=0 -> x=0")
+	check_eq(T.time_to_x(10.0, 10.0, 100.0), 100.0, "t=dur -> x=w")
+	check_eq(T.time_to_x(5.0, 10.0, 100.0), 50.0, "midpoint")
+	check_eq(T.time_to_x(20.0, 10.0, 100.0), 100.0, "past end clamps to w")
+
+func test_timeline_value_to_frac() -> void:
+	var T = load("res://core/timeline.gd")
+	check_eq(T.value_to_frac(5.0, 0.0, 10.0), 0.5, "midpoint -> 0.5")
+	check_eq(T.value_to_frac(-5.0, 0.0, 10.0), 0.0, "below min clamps to 0")
+	check_eq(T.value_to_frac(15.0, 0.0, 10.0), 1.0, "above max clamps to 1")
