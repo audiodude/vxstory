@@ -103,11 +103,12 @@ button. Descriptions below are from their actual renders.
   8 seconds, no mirror, low density. Delicate, almost botanical.
 - `cataclysm` — relentless full-screen quad-mirrored detonations every 3 seconds; dense
   white streak fields with heavy spread chaos and fast-fading trails. Pure violence.
-- `pulsar` — 5-minute long-form built on a slow **build envelope**: four burst
-  sources on the vibrant 12-hue `galton` palette start small and infrequent and
-  swell over ~4.5 minutes into large, rapid bursts whose sympathetic coupling
-  ramps in too, so isolated early blooms give way to chained chain-reaction
-  cascades at the climax. Source hues are seed-shuffled, so each render differs.
+- `pulsar` — 5-minute long-form on the unified modulation model: four burst
+  sources on the 12-hue `galton` palette, driven by a **tween** ("build") that
+  raises energy/density/coupling and tightens `loop_period` over 275s (small +
+  rare → large + frequent + sympathetically chained), an **LFO** drifting `grit`
+  for texture, and a per-`burst` **envelope** flashing the ambient `glow`. Seed-
+  shuffled hues, so each render differs.
 
 **fluid_swirl**
 - `lava_lamp` — thick, slow magma: deep reds and incandescent yellows rising and folding
