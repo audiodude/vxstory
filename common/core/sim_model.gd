@@ -68,12 +68,16 @@ func _attach_panel() -> void:
 		add_child(TweakPanel.new(self))
 
 func _attach_scene_tools() -> void:
+	# Timeline is a CanvasLayer, so it survives restart()'s "free non-CanvasLayer
+	# children" sweep. Parent the watcher (a plain Node) UNDER it so the sweep
+	# can't free the watcher and silently kill hot-reload on the first restart/scrub.
+	var Timeline = load("res://core/timeline.gd")
+	var tl = Timeline.new(self)
+	add_child(tl)
 	var Watcher = load("res://core/scene_watcher.gd")
 	var w = Watcher.new()
-	add_child(w)
+	tl.add_child(w)
 	w.setup(self, preset_path)
-	var Timeline = load("res://core/timeline.gd")
-	add_child(Timeline.new(self))
 
 func adopt_preset(p: Dictionary) -> void:
 	seed_value = int(p["seed"])

@@ -489,3 +489,29 @@ func test_timeline_value_to_frac() -> void:
 	check_eq(T.value_to_frac(5.0, 0.0, 10.0), 0.5, "midpoint -> 0.5")
 	check_eq(T.value_to_frac(-5.0, 0.0, 10.0), 0.0, "below min clamps to 0")
 	check_eq(T.value_to_frac(15.0, 0.0, 10.0), 1.0, "above max clamps to 1")
+
+# ---------------- watcher survives restart ----------------
+
+func test_watcher_survives_restart() -> void:
+	# _ready() is deferred in _initialize(), so bootstrap the model manually:
+	# resolve_and_restart() sets rng (required by restart()), then attach tools.
+	var M = load("res://main.gd")
+	var m = M.new()
+	get_root().add_child(m)
+	m.resolve_and_restart()   # sets rng; calls restart() once (no tools yet)
+	m._attach_scene_tools()   # attaches watcher + timeline
+	var w = _find_watcher(m)
+	check(w != null, "watcher attached before restart")
+	m.restart()
+	check(w != null and not w.is_queued_for_deletion(), "watcher survives restart()")
+	m.free()
+
+func _find_watcher(n: Node):
+	var WatcherScript = load("res://core/scene_watcher.gd")
+	for c in n.get_children():
+		if c.get_script() == WatcherScript:
+			return c
+		var found = _find_watcher(c)
+		if found != null:
+			return found
+	return null
