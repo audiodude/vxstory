@@ -49,16 +49,16 @@ static func load_preset(path: String, schema: Dictionary, model: String) -> Dict
 		for k in data.get(section, {}):
 			if not known_params.has(k):
 				warnings.append("unknown param in %s: %s" % [section, str(k)])
-	for kind in ["lfo", "tween", "envelope"]:
-		for md in data.get("modulators", {}).get(kind, []):
-			for tg in md.get("targets", []):
-				var to_name := str(tg.get("to", ""))
-				if not (known_params.has(to_name) or known_macros.has(to_name)):
-					warnings.append("unknown modulator target: " + to_name)
 	var raw_director = data.get("director", {})
 	var director: Dictionary = raw_director if raw_director is Dictionary else {}
 	var raw_mod = data.get("modulators", {})
 	var modulators: Dictionary = raw_mod if raw_mod is Dictionary else {}
+	for kind in ["lfo", "tween", "envelope"]:
+		for md in modulators.get(kind, []):
+			for tg in md.get("targets", []):
+				var to_name := str(tg.get("to", ""))
+				if not (known_params.has(to_name) or known_macros.has(to_name)):
+					warnings.append("unknown modulator target: " + to_name)
 	var preset := {
 		"model": model,
 		"seed": int(data.get("seed", 1)),
