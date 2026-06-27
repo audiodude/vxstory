@@ -9,6 +9,7 @@ const MacroMapper = preload("res://core/macro_mapper.gd")
 const PresetIO = preload("res://core/preset_io.gd")
 const RenderDriver = preload("res://core/render_driver.gd")
 const DirectorScript = preload("res://core/director.gd")
+const ModStack = preload("res://core/modulation.gd")
 
 var seed_value: int = 1
 var duration_sec: float = 30.0
@@ -19,6 +20,8 @@ var params: Dictionary = {}
 var rng  # RNGService
 var director  # Director (always constructed; may be disabled)
 var director_cfg: Dictionary = {}
+var mod_stack  # ModStack (null until resolve_and_restart)
+var modulators_cfg: Dictionary = {}
 var _dir_acc := 0.0
 var movie_mode: bool = false
 var _elapsed: float = 0.0
@@ -69,24 +72,41 @@ func adopt_preset(p: Dictionary) -> void:
 	overrides = p["overrides"].duplicate()
 	jitter = p["jitter"].duplicate()
 	director_cfg = p.get("director", {})
+	modulators_cfg = p.get("modulators", {})
 
 func resolve_and_restart() -> void:
 	rng = RNGService.new(seed_value)
-	params = MacroMapper.resolve(get_schema(), macros, overrides, jitter, rng.stream("jitter"))
+	mod_stack = ModStack.from_config(modulators_cfg, rng)
 	director = DirectorScript.from_config(director_cfg, macros, rng)
+	_compose()
 	restart()
+
+func _compose() -> void:
+	var jrng := RNGService.new(seed_value).stream("jitter")
+	if mod_stack != null and mod_stack.enabled:
+		params = mod_stack.compose(get_schema(), macros, overrides, jitter, jrng)
+	else:
+		params = MacroMapper.resolve(get_schema(), macros, overrides, jitter, jrng)
 
 func resolve_live() -> void:
 	# Re-resolve without restarting; used by the tweak panel for live params.
 	rng = RNGService.new(seed_value)
-	params = MacroMapper.resolve(get_schema(), macros, overrides, jitter, rng.stream("jitter"))
+	_compose()
 	apply_live(params)
 
+func emit_event(event_name: String) -> void:
+	if mod_stack != null and mod_stack.enabled:
+		mod_stack.emit(event_name)
+
 func save_to(path: String) -> Error:
-	return PresetIO.save_preset(path, model_name(), seed_value, duration_sec, macros, overrides, jitter, director_cfg)
+	return PresetIO.save_preset(path, model_name(), seed_value, duration_sec, macros, overrides, jitter, director_cfg, modulators_cfg)
 
 func _process(delta: float) -> void:
-	if director != null and director.enabled:
+	if mod_stack != null and mod_stack.enabled:
+		mod_stack.tick(delta)
+		_compose()
+		apply_live(params)
+	elif director != null and director.enabled:
 		director.tick(delta)
 		_dir_acc += delta
 		if _dir_acc >= 0.25:
