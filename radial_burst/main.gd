@@ -83,6 +83,9 @@ func restart() -> void:
 	s = rng.stream("sim")
 	_build()
 
+func _on_scrub(t: float) -> void:
+	sim_t = t
+
 func _build() -> void:
 	sim_vp = SubViewport.new()
 	sim_vp.size = Vector2i(1920, 1080)

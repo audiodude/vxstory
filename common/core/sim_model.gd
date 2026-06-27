@@ -25,6 +25,7 @@ var modulators_cfg: Dictionary = {}
 var _dir_acc := 0.0
 var movie_mode: bool = false
 var _elapsed: float = 0.0
+var preset_path: String = ""
 
 func model_name() -> String:
 	return "base"
@@ -44,6 +45,7 @@ func _ready() -> void:
 	for m in schema["macros"]:
 		macros[m["name"]] = float(m["default"])
 	var cli := RenderDriver.parse_user_args(OS.get_cmdline_user_args())
+	preset_path = cli["preset"]
 	if cli["preset"] != "":
 		var res := PresetIO.load_preset(cli["preset"], schema, model_name())
 		if not res["ok"]:
@@ -80,6 +82,32 @@ func resolve_and_restart() -> void:
 	director = DirectorScript.from_config(director_cfg, macros, rng)
 	_compose()
 	restart()
+
+func reload_from_file() -> void:
+	# Hot-reload the scene file (preview mode). Bad file -> keep current state.
+	if preset_path == "":
+		return
+	var res := PresetIO.load_preset(preset_path, get_schema(), model_name())
+	if not res["ok"]:
+		push_warning("hot-reload skipped: " + res["error"])
+		return
+	for w in res["warnings"]:
+		push_warning(w)
+	adopt_preset(res["preset"])
+	resolve_and_restart()
+
+func scrub_to(t: float) -> void:
+	# Jump the modulation clock to t, recompose, clear+rebuild, set the model
+	# clock via _on_scrub, then play forward (character-at-t, not frame-exact).
+	if mod_stack != null and mod_stack.enabled:
+		mod_stack.t = t
+	_compose()
+	restart()
+	_on_scrub(t)
+
+func _on_scrub(_t: float) -> void:
+	# Models with their own sim clock override this to set it to t.
+	pass
 
 func _compose() -> void:
 	var jrng := RNGService.new(seed_value).stream("jitter")

@@ -426,3 +426,40 @@ func test_mod_clamps_to_param_range() -> void:
 	var m = Mod.from_config(cfg, RNGService.new(1))
 	m.emit("hit")
 	check_eq(m.compose(_demo_schema(), {}, {}, {}, _jit())["plain"], 10.0, "offset clamped to param max 10")
+
+# ---------------- preview hooks (reload + scrub) ----------------
+
+func test_reload_from_file_adopts_new_scene() -> void:
+	var M = load("res://main.gd")
+	var m = M.new()
+	get_root().add_child(m)
+	var path := "/tmp/vx_reload.json"
+	var fa := FileAccess.open(path, FileAccess.WRITE)
+	fa.store_string(JSON.stringify({"model": "radial_burst", "seed": 777, "duration_sec": 42.0}))
+	fa.close()
+	m.preset_path = path
+	m.reload_from_file()
+	check_eq(m.seed_value, 777, "reload adopts new seed")
+	check_eq(m.duration_sec, 42.0, "reload adopts new duration")
+	m.free()
+
+func test_reload_bad_file_keeps_state() -> void:
+	var M = load("res://main.gd")
+	var m = M.new()
+	get_root().add_child(m)
+	m.seed_value = 5
+	m.preset_path = "/tmp/vx_does_not_exist_reload.json"
+	m.reload_from_file()  # missing file -> no-op, no crash
+	check_eq(m.seed_value, 5, "missing file leaves state untouched")
+	m.free()
+
+func test_scrub_sets_clocks() -> void:
+	var M = load("res://main.gd")
+	var m = M.new()
+	get_root().add_child(m)
+	m.modulators_cfg = {"tween": [{"name": "b", "secs": 10.0, "targets": [{"to": "energy", "amount": 0.5}]}]}
+	m.resolve_and_restart()
+	m.scrub_to(5.0)
+	check_eq(m.mod_stack.t, 5.0, "scrub sets the modulation clock")
+	check_eq(m.sim_t, 5.0, "scrub sets sim_t via _on_scrub override")
+	m.free()
