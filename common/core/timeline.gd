@@ -58,7 +58,7 @@ func _draw_strip() -> void:
 	var dur: float = maxf(model.duration_sec, 0.0001)
 	var font := ThemeDB.fallback_font
 	_strip.draw_rect(Rect2(0, 0, w, h), Color(0, 0, 0, 0.66), true)
-	_strip.draw_line(Vector2(0, 0), Vector2(w, 0), Color(0.4, 0.6, 0.9, 0.8), 2.0)
+	_strip.draw_line(Vector2(0, 0), Vector2(w, 0), Color(1, 1, 1, 0.8), 2.0)
 
 	var lanes := []
 	for tw in model.mod_stack.tweens:
@@ -94,14 +94,20 @@ func _draw_strip() -> void:
 				cur_frac = (MS.lfo(model.mod_stack.t, src["rate"], src["shape"], src["phase"]) + 1.0) * 0.5
 			"env":
 				col = Color(1.0, 0.4, 0.6)
-				var active: bool = src["instances"].size() > 0
-				_strip.draw_rect(Rect2(0, top, w, lane_h - 4.0), Color(col.r, col.g, col.b, 0.16 if active else 0.05), true)
+				# one "lightbulb" per concurrent active trigger; the rest sit dim
+				var active: int = src["instances"].size()
+				var cy := top + (lane_h - 4.0) * 0.5
+				var b := 0
+				while 120.0 + float(b) * 20.0 < w - 8.0:
+					var on := b < active
+					_strip.draw_circle(Vector2(120.0 + float(b) * 20.0, cy), 6.0, col if on else Color(col.r, col.g, col.b, 0.15))
+					b += 1
 		if pts.size() >= 2:
 			_strip.draw_polyline(pts, col, 1.5)
 		if L["kind"] != "env":
 			# live "what it does now" dot riding the curve at the playhead
 			_strip.draw_circle(Vector2(px, lerpf(bot, top, cur_frac)), 4.0, Color.WHITE)
-		_strip.draw_string(font, Vector2(6, top + 14), str(src.get("name", L["kind"])), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color(0.85, 0.9, 1.0, 0.7))
+		_strip.draw_string(font, Vector2(6, top + 14), str(src.get("name", L["kind"])), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, col)
 
 	# playhead + time
 	_strip.draw_line(Vector2(px, 0), Vector2(px, h), Color(1, 1, 1, 0.9), 2.0)
