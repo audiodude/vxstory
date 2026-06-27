@@ -362,3 +362,41 @@ func test_modsrc_envelope_attack_decay() -> void:
 	check_eq(MS.envelope(0.2, 0.1, 0.1, 1.0), 0.0, "end of decay -> 0")
 	check_eq(MS.envelope(1.0, 0.1, 0.1, 1.0), 0.0, "after -> 0")
 	check_eq(MS.envelope(0.0, 0.0, 1.0, 1.0), 1.0, "zero attack -> instant peak")
+
+# ---------------- modulation ----------------
+
+const Mod = preload("res://core/modulation.gd")
+
+func _jit() -> RandomNumberGenerator:
+	return RNGService.new(1).stream("jitter")
+
+func test_mod_disabled_when_empty() -> void:
+	var m = Mod.from_config({}, RNGService.new(1))
+	check_eq(m.enabled, false, "empty config -> disabled")
+
+func test_mod_tween_drives_superparam() -> void:
+	var cfg := {"tween": [{"name": "b", "secs": 10.0, "curve": "linear", "from": 0.0, "to": 1.0,
+		"targets": [{"to": "energy", "amount": 0.5}]}]}
+	var m = Mod.from_config(cfg, RNGService.new(1))
+	var p0: Dictionary = m.compose(_demo_schema(), {"energy": 0.5}, {}, {}, _jit())
+	check_eq(p0["speed"], 500.0, "t=0: energy 0.5 -> speed 500")
+	m.tick(10.0)
+	var p1: Dictionary = m.compose(_demo_schema(), {"energy": 0.5}, {}, {}, _jit())
+	check_eq(p1["speed"], 800.0, "tween raised energy to 1.0 -> speed 800")
+
+func test_mod_envelope_polyphonic_and_decays() -> void:
+	var cfg := {"envelope": [{"name": "f", "event": "hit", "attack": 0.1, "decay": 0.1, "peak": 1.0,
+		"targets": [{"to": "plain", "amount": 2.0}]}]}
+	var m = Mod.from_config(cfg, RNGService.new(1))
+	m.emit("hit")            # instance at t=0
+	m.tick(0.1)              # age 0.1 = peak
+	check_eq(m.compose(_demo_schema(), {}, {}, {}, _jit())["plain"], 7.0, "peak adds amount (5+2)")
+	m.tick(0.2)              # t=0.3: instance dead
+	check_eq(m.compose(_demo_schema(), {}, {}, {}, _jit())["plain"], 5.0, "decayed -> base 5")
+
+func test_mod_clamps_to_param_range() -> void:
+	var cfg := {"envelope": [{"name": "f", "event": "hit", "attack": 0.0, "decay": 1.0, "peak": 1.0,
+		"targets": [{"to": "plain", "amount": 100.0}]}]}
+	var m = Mod.from_config(cfg, RNGService.new(1))
+	m.emit("hit")
+	check_eq(m.compose(_demo_schema(), {}, {}, {}, _jit())["plain"], 10.0, "offset clamped to param max 10")
