@@ -48,11 +48,6 @@ func get_schema() -> Dictionary:
 		"params": [
 			PS.f("loop_period", 5.0, 2.0, 12.0, {"live": false, "jitter": {"pct": 10.0}}),
 			PS.i("source_count", 1, 1, 6, {"live": false}),
-			# Build envelope: when build_secs > 0, bursts ramp from small+infrequent
-			# to large+frequent over build_secs (then hold). 0 disables it (constant).
-			PS.f("build_secs", 0.0, 0.0, 600.0),
-			PS.f("build_size_start", 0.25, 0.05, 1.0),
-			PS.f("build_period_start", 9.0, 1.0, 20.0),
 			PS.i("particle_count", 4500, 500, 20000, {"live": false, "macro": {"name": "density", "lo": 2000, "hi": 7000}}),
 			PS.f("burst_speed", 260.0, 50.0, 900.0, {"live": false, "macro": {"name": "energy", "lo": 120.0, "hi": 400.0}, "jitter": {"pct": 8.0}}),
 			PS.f("speed_spread", 0.55, 0.0, 0.9, {"live": false, "macro": {"name": "grit", "lo": 0.25, "hi": 0.85}}),
@@ -184,18 +179,9 @@ func _shuffled_indices(count: int) -> Array:
 		order[j] = tmp
 	return order
 
-# Build-envelope progress 0..1 (smoothstepped). 1.0 (full) when disabled.
-func _build_p() -> float:
-	var bs: float = params["build_secs"]
-	if bs <= 0.0:
-		return 1.0
-	var t := clampf(sim_t / bs, 0.0, 1.0)
-	return t * t * (3.0 - 2.0 * t)
-
-# Inter-burst period: long (build_period_start) early -> short (loop_period) late.
+# Inter-burst period (seeded jitter); frequency is now driven by modulating loop_period.
 func _ignite_period() -> float:
-	var per := lerpf(params["build_period_start"], params["loop_period"], _build_p())
-	return per * s.randf_range(0.85, 1.15)
+	return params["loop_period"] * s.randf_range(0.85, 1.15)
 
 func _make_emitter(amount: int, scale_mul: float, base: Color) -> GPUParticles2D:
 	var g := GPUParticles2D.new()
@@ -214,21 +200,21 @@ func _make_emitter(amount: int, scale_mul: float, base: Color) -> GPUParticles2D
 	g.process_material = _make_process_material(scale_mul, base)
 	return g
 
-func _make_process_material(scale_mul: float, base: Color, size_mul := 1.0) -> ParticleProcessMaterial:
+func _make_process_material(scale_mul: float, base: Color) -> ParticleProcessMaterial:
 	var pm := ParticleProcessMaterial.new()
 	pm.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_SPHERE_SURFACE
 	pm.emission_sphere_radius = 4.0
 	pm.direction = Vector3(1, 0, 0)
 	pm.spread = 180.0
 	pm.gravity = Vector3.ZERO
-	var spd: float = params["burst_speed"] * scale_mul * size_mul
+	var spd: float = params["burst_speed"] * scale_mul
 	pm.initial_velocity_min = spd * (1.0 - params["speed_spread"])
 	pm.initial_velocity_max = spd * (1.0 + params["speed_spread"])
 	pm.damping_min = params["damping"] * 0.6
 	pm.damping_max = params["damping"] * 1.4
 	pm.particle_flag_align_y = true
-	pm.scale_min = params["streak_len"] * size_mul / 128.0 * 0.5
-	pm.scale_max = params["streak_len"] * size_mul / 128.0 * 1.3
+	pm.scale_min = params["streak_len"] / 128.0 * 0.5
+	pm.scale_max = params["streak_len"] / 128.0 * 1.3
 	pm.lifetime_randomness = 0.45
 	var col := Hue.rotated(base, params["hue_drift"] * sim_t / 60.0)
 	var grad := Gradient.new()
@@ -257,37 +243,33 @@ func _src_color(src: Dictionary) -> Color:
 
 func _ignite(i: int, depth: int) -> void:
 	var src: Dictionary = sources[i]
-	var p := _build_p()
-	var sz := lerpf(params["build_size_start"], 1.0, p)
-	# re-read drifted params so energy/density/hue take effect each burst, and
-	# scale by the build envelope so bursts start small and grow over the run
-	src["main"].amount = maxi(int(params["particle_count"] * sz), 8)
+	# params are the live composed values (modulators already applied this frame)
+	src["main"].amount = maxi(int(params["particle_count"]), 8)
 	src["main"].lifetime = params["particle_life"]
-	src["main"].process_material = _make_process_material(1.0, src["base"], sz)
+	src["main"].process_material = _make_process_material(1.0, src["base"])
 	src["main"].position = src["pos"]
 	src["main"].restart()
 	for e in src["subs"]:
 		var ang := s.randf_range(0.0, TAU)
 		var at := s.randf_range(0.1, 0.5)
-		var dist: float = params["burst_speed"] * 0.55 * at * sz
-		e.amount = maxi(int(params["particle_count"] * params["subburst_scale"] / maxf(1.0, float(src["subs"].size())) * sz), 50)
-		e.process_material = _make_process_material(0.45, src["base"], sz)
+		var dist: float = params["burst_speed"] * 0.55 * at
+		e.amount = maxi(int(params["particle_count"] * params["subburst_scale"] / maxf(1.0, float(src["subs"].size()))), 50)
+		e.process_material = _make_process_material(0.45, src["base"])
 		e.position = src["pos"] + Vector2.from_angle(ang) * dist
 		e.restart()
-	var n_rings := int(round(params["ring_count"] * lerpf(0.4, 1.0, p)))
-	for ri in n_rings:
+	for ri in int(params["ring_count"]):
 		rings.append({"center": src["pos"], "r": 10.0,
 			"speed": params["ring_speed"] * s.randf_range(0.7, 1.3),
 			"alpha": 1.0, "color": _src_color(src)})
 	src["timer"] = 0.0
 	src["period"] = _ignite_period()
-	# sympathetic cascade grows with the build: rare/isolated early, chaining late
-	var coupling: float = params["sympathy"] * p
-	if sources.size() > 1 and depth == 0 and coupling > 0.0:
+	emit_event("burst")
+	# sympathetic cascade (only from a primary ignition); strength is composed sympathy
+	if sources.size() > 1 and depth == 0 and params["sympathy"] > 0.0:
 		var positions := []
 		for sc in sources:
 			positions.append(sc["pos"])
-		var caught := Cascade.flood(positions, i, coupling, params["sympathy_radius"], s)
+		var caught := Cascade.flood(positions, i, params["sympathy"], params["sympathy_radius"], s)
 		for c in caught:
 			var cidx := int(c["idx"])
 			var already := false
