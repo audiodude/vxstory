@@ -532,3 +532,16 @@ func _find_watcher(n: Node):
 		if found != null:
 			return found
 	return null
+
+# ---------------- designer knob ----------------
+
+const Knob = preload("res://core/designer/knob.gd")
+
+func test_knob_frac() -> void:
+	check_eq(Knob.frac(5.0, 0.0, 10.0), 0.5, "midpoint -> 0.5")
+	check_eq(Knob.frac(-1.0, 0.0, 10.0), 0.0, "below min clamps")
+	check_eq(Knob.frac(11.0, 0.0, 10.0), 1.0, "above max clamps")
+
+func test_knob_angle_sweep() -> void:
+	check_eq(Knob.angle(0.0), deg_to_rad(135.0), "frac 0 -> 135deg")
+	check_eq(Knob.angle(1.0), deg_to_rad(405.0), "frac 1 -> 135+270 deg")
