@@ -1,4 +1,4 @@
-extends Control
+extends CanvasLayer
 # Root of the visual Designer. Builds a BasesPanel + a SourceCard per source from
 # the model's adopted scene, and writes scene.json (debounced) on any edit so the
 # Phase 1 preview hot-reloads. Reuses the model's schema (get_schema()).
@@ -21,7 +21,6 @@ var _macro_knobs := {}  # name -> Knob   (populated from BasesPanel)
 
 func setup(p_model) -> void:
 	model = p_model
-	set_anchors_preset(Control.PRESET_FULL_RECT)
 	_save_timer = Timer.new()
 	_save_timer.one_shot = true
 	_save_timer.wait_time = 0.15
