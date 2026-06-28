@@ -30,21 +30,21 @@
         "name": "grit_wobble",
         "oscillators": [
           {
-            "amount": 0.557405783236027,
-            "period_sec": 43.9423313960433,
+            "amount": 0.69,
+            "period_sec": 120.0,
             "phase_deg": 0.0,
             "shape": "sine"
           },
           {
-            "amount": 0.4,
-            "period_sec": 8.27852737188339,
+            "amount": 0.349999999999999,
+            "period_sec": 75.0,
             "phase_deg": 0.0,
-            "shape": "sine"
+            "shape": "saw"
           }
         ],
         "targets": [
           {
-            "amount": 2.34434698224069,
+            "amount": 0.744346982240689,
             "to": "grit"
           }
         ]
