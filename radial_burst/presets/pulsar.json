@@ -1,47 +1,93 @@
 {
-  "model": "radial_burst",
-  "seed": 204,
   "duration_sec": 300.0,
-  "macros": {
-    "energy": 0.3,
-    "density": 0.35,
-    "symmetry": 0.3,
-    "grit": 0.4,
-    "coupling": 0.0
-  },
-  "overrides": {
-    "source_count": 4,
-    "palette": "galton",
-    "loop_period": 7.0,
-    "sympathy_radius": 620.0,
-    "ripple_speed": 1500.0,
-    "hue_drift": 0.0,
-    "trail_persist": 0.08,
-    "glow": 0.5,
-    "mirror": "off"
-  },
   "jitter": {},
+  "macros": {
+    "coupling": 0.0,
+    "density": 0.35,
+    "energy": 0.3,
+    "grit": 0.4,
+    "symmetry": 0.465644176006317
+  },
+  "model": "radial_burst",
   "modulators": {
+    "envelope": [
+      {
+        "attack": 0.04,
+        "decay": 0.5,
+        "event": "burst",
+        "name": "flash",
+        "peak": 1.0,
+        "targets": [
+          {
+            "amount": 0.35,
+            "to": "glow"
+          }
+        ]
+      }
+    ],
     "lfo": [
-      { "name": "grit_wobble",
+      {
+        "name": "grit_wobble",
         "oscillators": [
-          { "shape": "sine", "period_sec": 40.0, "phase_deg": 0.0, "amount": 0.6 },
-          { "shape": "sine", "period_sec": 15.6, "phase_deg": 0.0, "amount": 0.4 }
+          {
+            "amount": 0.557405783236027,
+            "period_sec": 43.9423313960433,
+            "phase_deg": 0.0,
+            "shape": "sine"
+          },
+          {
+            "amount": 0.4,
+            "period_sec": 8.27852737188339,
+            "phase_deg": 0.0,
+            "shape": "sine"
+          }
         ],
-        "targets": [ { "to": "grit", "amount": 0.2 } ] }
+        "targets": [
+          {
+            "amount": 7.44434698224068,
+            "to": "grit"
+          }
+        ]
+      }
     ],
     "tween": [
-      { "name": "build", "secs": 275.0, "curve": "linear", "from": 0.0, "to": 1.0,
+      {
+        "curve": "ease_in",
+        "from": 0.0,
+        "name": "build",
+        "secs": 390.21874974668,
         "targets": [
-          { "to": "energy", "amount": 0.45 },
-          { "to": "density", "amount": 0.4 },
-          { "to": "coupling", "amount": 0.7 },
-          { "to": "loop_period", "amount": -5.7 }
-        ] }
-    ],
-    "envelope": [
-      { "name": "flash", "event": "burst", "attack": 0.04, "decay": 0.5, "peak": 1.0,
-        "targets": [ { "to": "glow", "amount": 0.35 } ] }
+          {
+            "amount": 0.875153368711471,
+            "to": "energy"
+          },
+          {
+            "amount": 0.4,
+            "to": "density"
+          },
+          {
+            "amount": 0.7,
+            "to": "coupling"
+          },
+          {
+            "amount": -5.7,
+            "to": "loop_period"
+          }
+        ],
+        "to": 1.0
+      }
     ]
-  }
+  },
+  "overrides": {
+    "glow": 0.5,
+    "hue_drift": 0.0,
+    "loop_period": 7.0,
+    "mirror": "off",
+    "palette": "galton",
+    "ripple_speed": 1500.0,
+    "source_count": 4.0,
+    "sympathy_radius": 620.0,
+    "trail_persist": 0.08
+  },
+  "seed": 204
 }

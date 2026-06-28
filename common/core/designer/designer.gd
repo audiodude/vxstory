@@ -21,6 +21,12 @@ var _macro_knobs := {}  # name -> Knob   (populated from BasesPanel)
 
 func setup(p_model) -> void:
 	model = p_model
+	var win := get_window()
+	if win != null:
+		# Designer reflows on resize; the models' project keeps fixed-aspect
+		# letterbox for renders, so override it here (this process only).
+		win.content_scale_mode = Window.CONTENT_SCALE_MODE_DISABLED
+		win.content_scale_aspect = Window.CONTENT_SCALE_ASPECT_EXPAND
 	_save_timer = Timer.new()
 	_save_timer.one_shot = true
 	_save_timer.wait_time = 0.15
@@ -31,11 +37,19 @@ func setup(p_model) -> void:
 func _build() -> void:
 	var scroll := ScrollContainer.new()
 	scroll.set_anchors_preset(Control.PRESET_FULL_RECT)
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	add_child(scroll)
+	var margin := MarginContainer.new()
+	margin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	margin.add_theme_constant_override("margin_left", 16)
+	margin.add_theme_constant_override("margin_right", 16)
+	margin.add_theme_constant_override("margin_top", 12)
+	margin.add_theme_constant_override("margin_bottom", 12)
+	scroll.add_child(margin)
 	var col := VBoxContainer.new()
 	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	col.add_theme_constant_override("separation", 10)
-	scroll.add_child(col)
+	col.add_theme_constant_override("separation", 12)
+	margin.add_child(col)
 
 	var title := Label.new()
 	title.text = "DESIGNER · %s · %s" % [model.model_name(), model.preset_path]
@@ -45,7 +59,7 @@ func _build() -> void:
 	_bases = BasesPanel.new()
 	_bases.setup(model.get_schema(), model.macros, model.overrides)
 	_bases.changed.connect(_on_changed)
-	col.add_child(_bases)
+	col.add_child(_framed(_bases))
 
 	_macro_knobs = _bases.macro_knobs()
 	var tr := HBoxContainer.new()
@@ -76,7 +90,7 @@ func _build() -> void:
 			var card = SourceCard.new()
 			card.setup(card_kind, cfg[kind][i], model.get_schema())
 			card.changed.connect(_on_changed)
-			col.add_child(card)
+			col.add_child(_framed(card))
 			_cards.append({"kind": kind, "card": card})
 
 func _on_changed() -> void:
@@ -117,3 +131,18 @@ static func live_macro_values(schema: Dictionary, macros: Dictionary, offsets: D
 	for m in schema["macros"]:
 		out[m["name"]] = clampf(float(macros.get(m["name"], m["default"])) + float(offsets.get(m["name"], 0.0)), 0.0, 1.0)
 	return out
+
+func _framed(node: Control) -> PanelContainer:
+	var panel := PanelContainer.new()
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.055, 0.065, 0.10)
+	sb.border_color = Color(0.16, 0.19, 0.28)
+	sb.set_border_width_all(1)
+	sb.set_corner_radius_all(6)
+	sb.content_margin_left = 12
+	sb.content_margin_right = 12
+	sb.content_margin_top = 10
+	sb.content_margin_bottom = 10
+	panel.add_theme_stylebox_override("panel", sb)
+	panel.add_child(node)
+	return panel

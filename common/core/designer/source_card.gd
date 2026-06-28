@@ -101,26 +101,36 @@ func _build() -> void:
 			ev_lbl.add_theme_font_size_override("font_size", 10)
 			ctrl.add_child(ev_lbl)
 
+	var routes := HFlowContainer.new()
+	routes.add_theme_constant_override("h_separation", 20)
+	routes.add_theme_constant_override("v_separation", 4)
+	add_child(routes)
 	for tg in src.get("targets", []):
-		var row := HBoxContainer.new()
+		var item := HBoxContainer.new()
+		item.add_theme_constant_override("separation", 5)
 		var lab := Label.new()
 		lab.text = "→ %s" % str(tg.get("to", "?"))
-		lab.custom_minimum_size = Vector2(160, 0)
-		row.add_child(lab)
-		row.add_child(_knob_for(tg, "amount", -10.0, 10.0, prev))
-		add_child(row)
+		item.add_child(lab)
+		var k = Knob.new()
+		k.setup(-10.0, 10.0, float(tg.get("amount", 0.0)), float(tg.get("amount", 0.0)), _color())
+		k.set_bipolar(true)
+		k.custom_minimum_size = Vector2(34, 34)
+		k.value_changed.connect(func(v):
+			tg["amount"] = v
+			changed.emit())
+		item.add_child(k)
+		routes.add_child(item)
 
 func _knob(_path: String, holder: Dictionary, key: String, lo: float, hi: float) -> VBoxContainer:
-	return _make_labeled_knob(holder, key, lo, hi, key, null)
+	return _make_labeled_knob(holder, key, lo, hi, key, false)
 
-func _knob_for(holder: Dictionary, key: String, lo: float, hi: float, prev) -> VBoxContainer:
-	return _make_labeled_knob(holder, key, lo, hi, key, prev)
-
-func _make_labeled_knob(holder: Dictionary, key: String, lo: float, hi: float, label: String, prev) -> VBoxContainer:
+func _make_labeled_knob(holder: Dictionary, key: String, lo: float, hi: float, label: String, bipolar: bool) -> VBoxContainer:
 	var box := VBoxContainer.new()
 	box.alignment = BoxContainer.ALIGNMENT_CENTER
 	var k = Knob.new()
 	k.setup(lo, hi, float(holder.get(key, 0.0)), float(holder.get(key, 0.0)), _color())
+	if bipolar:
+		k.set_bipolar(true)
 	k.value_changed.connect(func(v):
 		holder[key] = v
 		if _prev != null:

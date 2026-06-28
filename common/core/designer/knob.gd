@@ -11,6 +11,7 @@ var value := 0.0
 var default_v := 0.0
 var live_v := NAN  # NAN -> no ring
 var ring_color := Color(0.5, 0.8, 1.0)
+var bipolar := false  # amount knobs: unity 0 at 12 o'clock, fill from center
 var _drag := false
 
 func setup(p_min: float, p_max: float, p_value: float, p_default: float, p_ring := Color(0.5, 0.8, 1.0)) -> void:
@@ -26,6 +27,10 @@ func set_live(v: float) -> void:
 	live_v = v
 	queue_redraw()
 
+func set_bipolar(b: bool) -> void:
+	bipolar = b
+	queue_redraw()
+
 static func frac(v: float, lo: float, hi: float) -> float:
 	return clampf((v - lo) / maxf(hi - lo, 0.0001), 0.0, 1.0)
 
@@ -37,11 +42,17 @@ func _draw() -> void:
 	var r := minf(size.x, size.y) * 0.42
 	draw_circle(c, r, Color(0.11, 0.13, 0.19))
 	draw_arc(c, r, angle(0.0), angle(1.0), 48, Color(0.24, 0.29, 0.41), 2.0)
+	var vf := frac(value, min_v, max_v)
+	var origin := 0.5 if bipolar else 0.0
+	if bipolar:
+		var ta := angle(0.5)  # unity tick at 12 o'clock
+		draw_line(c + Vector2.from_angle(ta) * (r - 4.0), c + Vector2.from_angle(ta) * (r + 2.0), Color(0.55, 0.6, 0.72), 1.5)
+	draw_arc(c, r, angle(origin), angle(vf), 40, ring_color.darkened(0.15), 2.5)
 	if not is_nan(live_v):
 		var lf := frac(live_v, min_v, max_v)
-		draw_arc(c, r, angle(0.0), angle(lf), 48, ring_color, 3.0)
+		draw_arc(c, r, angle(origin), angle(lf), 48, ring_color, 3.0)
 		draw_circle(c + Vector2.from_angle(angle(lf)) * r, 3.5, ring_color)
-	var a := angle(frac(value, min_v, max_v))
+	var a := angle(vf)
 	draw_line(c, c + Vector2.from_angle(a) * (r - 2.0), Color(0.88, 0.92, 0.97), 2.0)
 
 func _gui_input(ev: InputEvent) -> void:
