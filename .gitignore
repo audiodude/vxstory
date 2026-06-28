@@ -6,3 +6,6 @@ renders/
 
 # render-time artifact written by radio render scripts
 override.cfg
+
+# Local working status report (not for git)
+/STATUS.md
