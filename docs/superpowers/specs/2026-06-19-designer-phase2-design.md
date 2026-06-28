@@ -1,135 +1,141 @@
-# Scene authoring — Phase 2 (the Designer app) — design
+# Scene authoring — Phase 2 (the Designer) — design
 
-**Date:** 2026-06-19
+**Date:** 2026-06-19 (revised after layout brainstorm)
 
 ## Goal
 
-Build the **Designer**: a separate Godot app where you compose a render's
-modulation program **visually** — graphical ADSR/LFO/tween editors and
-Ableton-style rotary knobs — and which writes `scene.json`. It is the *only*
-thing that edits the scene; you never hand-edit JSON (that's the `0.754` grind
-Phase 1 left in place). It runs alongside the Phase 1 preview: Designer writes
-`scene.json` → preview hot-reloads → you watch/scrub.
+Build the **Designer**: compose a render's modulation program **visually** —
+graphical oscillator/tween/envelope editors and Ableton-style rotary knobs — and
+write `scene.json`. It is the *only* thing that edits the scene; never hand-edit
+JSON. It runs beside the Phase 1 preview: Designer writes `scene.json` → preview
+hot-reloads → you watch/scrub. Principle: **a value is shown as what it does** —
+a curve, a waveform, an envelope, or a knob whose ring moves; never a bare number.
 
-Guiding principle (unchanged): **a value is shown as what it does.** A tween is
-its curve, an LFO its waveform, an envelope its shape, a scalar a knob with an
-arc — never a bare number.
+## Architecture — Designer as a *mode inside the model's project*
 
-## Architecture
+Launch `godot --path <model> -- --designer [--scene presets/<name>.json]`.
+`SimModel._ready` sees `--designer` and, instead of building the sim, attaches the
+Designer UI to the (un-built) model instance. Because it's the model's own
+project, the Designer reads the schema directly from `self.get_schema()` — **no
+JSON export, no cross-project loading.** Still two processes/windows as intended
+(Designer + preview), both the model project in different modes; you pick the
+model via `--path` (one model per Designer window).
 
-- **Separate Godot project** at `designer/` (`project.godot`, `main.gd`,
-  `main.tscn`), with `core -> ../common/core` symlinked exactly like the models.
-  It reuses the framework directly:
-  - `param_schema.gd` — destination types + ranges.
-  - `mod_sources.gd` — **draws the editor previews from the same functions the
-    engine runs**, so the curve you shape is exactly the curve you get (zero
-    drift — the reason both halves are Godot).
-  - `preset_io.gd` — load/save the scene file.
-- **Two inputs:** the **scene file** (a model preset, e.g.
-  `radial_burst/presets/pulsar.json`) and the model's **schema** (its params +
-  macros, so the Designer knows the legal modulation destinations and their
-  `[min,max]` ranges).
-- **One output:** it writes the scene file (via `preset_io.save_preset`), which
-  the Phase 1 preview hot-reloads. The file is the bus; the two processes stay
-  decoupled — no IPC.
+- Designer code lives in `common/core/designer/` (symlinked into each model as
+  `core/designer`, like `core`), reusing `param_schema.gd`, `mod_sources.gd`,
+  `modulation.gd`, `preset_io.gd`.
+- **Input:** the model (schema via `get_schema()`) + a scene file (`--scene`).
+- **Output:** writes the scene file via `preset_io.save_preset` on every change
+  (debounced ~150 ms) → the Phase 1 preview hot-reloads.
 
-### Schema access (open decision — leaning A)
+## Live knobs via the Designer's own clock
 
-The Designer needs the target model's schema. Options:
-- **A (recommended): export to JSON.** A helper `common/core/export_schema.gd`
-  run as `godot --headless --path <model> --script res://core/export_schema.gd --
-  <out>` instantiates the model script, calls `get_schema()`, and writes it to
-  `<model>/schema.json`. The Designer reads that. Keeps the Designer a clean
-  consumer of two JSON files — fully decoupled from model code, trivially
-  testable. Cost: re-run the one-line export when a model's schema changes.
-- **B: instantiate the model script in-Designer.** Requires the model scripts to
-  live in the Designer's `res://` tree (symlinks); cross-project script loading
-  is fragile. Rejected unless review prefers it.
+The Designer holds the scene in memory and, to **animate the knobs Ableton-style**,
+runs its *own* modulation clock with a small **transport** (play / pause / scrub /
+loop). Each frame it composes values through the modulation engine
+(`ModStack`/`mod_sources`) at the current `t` and shows, per knob: the **pointer =
+the set base value**, a **colored ring = the live modulated value**. So you watch
+the build sweep, the LFO wobble, the envelope flash — on the knobs themselves. No
+sim render in the Designer; the render + its scrub stay in the preview window.
 
-## Core UX components (reusable `Control` widgets under `designer/widgets/`)
+## UX components (`common/core/designer/widgets/`)
 
-1. **Knob** — Ableton-style rotary: vertical-drag to change, value arc + label,
-   value shown on grab, fine-control on `Shift`, double-click resets to default.
-   Maps a scalar within `[min,max]`. The atomic control (replaces every slider).
-2. **CurveEditor** (tween) — a live curve drawn via `mod_sources.tween` over the
-   duration; a curve-type picker (`linear|ease_in|ease_out|smooth`) and knobs for
-   `secs`, `from`, `to`. (v1: pick + knobs with a live preview; dragging the curve
-   handles directly is 2c.)
-3. **LFOEditor** — a shape picker (`sine|triangle|drift`), a `rate` knob, and a
-   live waveform preview via `mod_sources.lfo`.
-4. **EnvEditor** — `attack`/`decay`/`peak` knobs and a live shape preview via
-   `mod_sources.envelope`, plus the trigger-event picker (e.g. `burst`).
-5. **SourceCard** — wraps one source: its type editor + a **routing list** (each
-   routing = a destination dropdown over the schema's macros+params, an amount
-   knob, and a remove button) + an add-routing button + a remove-source button.
-6. **BasesPanel** — knobs for the superparam (macro) bases and the key param
-   overrides (palette/source_count/etc.), read from the schema.
+1. **Knob** — Ableton rotary: vertical-drag to change, Shift = fine, double-click =
+   reset to default; pointer = base, animated ring = live modulated value.
+2. **LFO card / OscillatorEditor** — an LFO is a **stack of oscillators**; each
+   oscillator has shape (`sine|triangle|saw|square`), `period_sec`, `phase_deg`,
+   `amount`, with its own mini-wave; plus a **summed-output** preview (the actual
+   signal). (`[+ oscillator]` to add is 2b.) Matches the engine, which already
+   models LFOs this way (`mod_sources.osc` + `lfo_value`).
+3. **CurveEditor (tween)** — curve-type picker (`linear|ease_in|ease_out|smooth`) +
+   `secs`/`from`/`to` knobs + a live curve preview (`mod_sources.tween`).
+4. **EnvEditor** — `attack`/`decay`/`peak` knobs + a live shape preview
+   (`mod_sources.envelope`) + the trigger-event picker.
+5. **SourceCard** — header + **preview-on-top** + the type editor + **source-centric
+   routing** rows (destination + amount knob + remove).
+6. **BasesPanel** — superparam knobs + a **"Show all basic params (A–Z)" zippy**:
+   collapsed by default; expands to every basic param as knobs, sorted
+   alphabetically.
 
-Every edit mutates the in-memory scene and writes `scene.json` (debounced ~150ms),
-so the preview hot-reloads continuously.
+All previews are drawn from the same `mod_sources` the engine runs — zero drift.
 
-## Layout (sketch — open to your mockups)
+## Layout (settled — see the approved v4 mock)
+
+A compact **~700 px panel, centered** (a tool panel, not full-bleed):
 
 ```
-┌─ DESIGNER · radial_burst · pulsar.json ──────────── seed 204 · 300s · ●writes ─┐
-│ BASES   (energy) (density) (symmetry) (grit) (coupling)   [param overrides…]    │
-├─ SOURCES ─────────────────────────────────────────  [+ LFO] [+ Tween] [+ Env] ─┤
-│ ┌ TWEEN "build" ──────────────┐ ┌ LFO "grit_wobble" ─┐ ┌ ENV "flash" ────────┐ │
-│ │  ╱──  curve: linear ▾       │ │  ∿∿  shape: drift ▾ │ │  ◢╲  on: burst ▾    │ │
-│ │ (secs)(from)(to)            │ │ (rate)              │ │ (atk)(dec)(peak)    │ │
-│ │ → energy      (amt) ✕       │ │ → grit   (amt) ✕    │ │ → glow   (amt) ✕    │ │
-│ │ → density     (amt) ✕       │ │ [+ route]           │ │ [+ route]           │ │
-│ │ → loop_period (amt) ✕  [+]  │ └─────────────────────┘ └─────────────────────┘ │
-│ └─────────────────────────────┘                                                 │
-└─────────────────────────────────────────────────────────────────────────────── ┘
+┌ DESIGNER · radial_burst · pulsar.json        ▶ ▭▭▭|▭ 1:18/5:00 ⟲ ┐
+│ BASES — superparams                                               │
+│   (energy) (density) (symmetry) (grit) (coupling)   ← animated     │
+│   ▸ Show all basic params (A–Z)                                    │
+│ SOURCES                              [+ LFO] [+ Tween] [+ Env] (2b)│
+│ ┌ TWEEN "build" ─────────────────────────────────────────────────┐│
+│ │ [curve preview ───────────────] curve: linear ▾                ││
+│ │ (secs)(from)(to)                                               ││
+│ │ → energy ◦ 0.45 ✕   → density ◦ 0.40 ✕   → coupling ◦ 0.70 ✕   ││
+│ └────────────────────────────────────────────────────────────────┘│
+│ ┌ LFO "grit_wobble" ──────────────────────────────────── [+osc] ─┐│
+│ │ [summed wave preview ──────────────────────────────]           ││
+│ │ ┌ OSC 1: sine (per)(ph)(amt) ┐ ┌ OSC 2: sine (per)(ph)(amt) ┐  ││
+│ │ → grit ◦ 0.20 ✕                                                ││
+│ └────────────────────────────────────────────────────────────────┘│
+│ ┌ ENV "flash" ──────────────────────────────── on: burst ▾ ──────┐│
+│ │ [env preview ──] (atk)(dec)(peak)   → glow ◦ 0.35 ✕            ││
+│ └────────────────────────────────────────────────────────────────┘│
+└────────────────────────────────────────────────────────────────────┘
 ```
 
-`( )` = a knob. The render itself + scrub timeline live in the Phase 1 preview
-window running beside the Designer; the Designer shows each source's *shape*.
+Vertical stack of source cards, each **preview-on-top, controls below**.
 
-## Decomposition (sub-phases — each its own plan)
+## scene.json contract
 
-Phase 2 is large, so build it in cycles, each independently useful:
+The preset format (model, seed, duration, macros, overrides, jitter, modulators).
+`modulators.lfo[]` uses the oscillator form: `{name, oscillators:[{shape,
+period_sec, phase_deg, amount}], targets:[{to, amount}]}`. Designer mutates the
+in-memory scene and saves on change; the file is the bus.
 
-- **2a — Widgets + edit an existing scene** *(first cycle, specced in detail
-  here).* The Knob, CurveEditor, LFOEditor, EnvEditor widgets; load a
-  scene + schema; edit the **existing** sources' params, the bases, and routing
-  **amounts**; write `scene.json` on change. No add/remove of sources/routings
-  yet; no drag-handle curve editing. This alone ends hand-editing JSON to tune
-  pulsar.
-- **2b — Compose scenes.** Add/remove sources; add/remove routings; destination
-  dropdowns over the full schema; new-scene / save-as / scene picker.
-- **2c — Direct manipulation + MIDI.** Drag curve/envelope handles directly;
-  **MIDI CC** input mapping hardware knobs to scene params.
+## Decomposition (each its own plan)
+
+- **2a — Widgets + edit an existing scene** *(first cycle, the detailed one):* the
+  Knob (animated, via the transport clock), CurveEditor, OscillatorEditor/LFO
+  card, EnvEditor; load model schema + scene; the Bases panel incl. the
+  "Show all basic params (A–Z)" zippy; edit the **existing** sources' params,
+  oscillators, bases, and routing **amounts**; the transport (play/pause/scrub);
+  write `scene.json` on change. **No add/remove** of sources/routings/oscillators
+  yet; no drag-handle curve editing. This alone ends hand-editing JSON.
+- **2b — Compose scenes.** `[+ LFO/Tween/Env]`, `[+ oscillator]`, `[+ route]`,
+  remove buttons, destination dropdowns over the full schema, scene picker /
+  save-as.
+- **2c — Direct manipulation + MIDI.** Drag curve/envelope/oscillator handles;
+  **MIDI CC** mapping hardware knobs to scene params.
 
 ## Verification
 
-- The pure math in each widget is unit-tested (knob value↔angle mapping; the
-  preview samplers reuse the already-tested `mod_sources`).
-- Scene round-trip is tested via `preset_io` (load → mutate → save → reload equals).
-- The schema export helper is tested (run on radial_burst → JSON has the expected
-  params/macros).
-- The GUI itself is verified by running the Designer (xvfb screenshot + your
-  review), and by the integration loop: Designer writes `scene.json` → the Phase 1
-  preview hot-reloads (manual).
-- This is a GUI tool — like the rest of vxstory, look/feel is your visual review;
-  automated checks cover the logic and the file contract.
+- Pure widget math is unit-tested (knob value↔angle; previews reuse the
+  already-tested `mod_sources`); scene round-trip via `preset_io`; the `--designer`
+  launch path (attaches Designer, reads `get_schema()`, doesn't build the sim) via
+  headless smoke.
+- The GUI is verified by running it (xvfb screenshot + your review) and the
+  integration loop: Designer writes `scene.json` → preview hot-reloads.
+- Like the rest of vxstory, look/feel is your visual review; automated checks
+  cover the logic and the file contract.
 
-## Open questions for your review
+## Decisions locked (former open questions)
 
-1. **Schema access:** JSON-export helper (A, recommended) vs instantiate-in-Designer (B)?
-2. **2a scope:** edit-existing-scene only (no add/remove sources yet) as the first
-   cycle — acceptable, or do you want add/remove in the first cut?
-3. **Designer shows source *shapes* only**, with the render+scrub staying in the
-   Phase 1 preview window — or should the Designer also embed a live render/scrub?
-4. **Knob conventions:** vertical-drag + Shift-fine + double-click-reset — match
-   your Ableton muscle memory, or different?
-5. **Layout:** want me to mock the layout up visually (browser companion) before
-   we lock it, or is the sketch enough to plan from?
+- **Schema access:** C — Designer as a mode in the model's project; schema via
+  `get_schema()`.
+- **2a scope:** edit existing scene only (no add/remove).
+- **Designer shows signal shapes + animated knobs**; render/scrub stay in the
+  preview window.
+- **Knob conventions:** vertical-drag · Shift-fine · double-click-reset; pointer =
+  base, ring = live modulated value.
+- **Layout:** ~700 px compact centered panel, vertical source stack,
+  preview-on-top (v4 mock approved).
+- **LFO model:** oscillator stack (engine already shipped — `mod_sources.osc` +
+  `lfo_value`, shapes sine/triangle/saw/square).
 
 ## Out of scope (Phase 2)
 
 - The Phase 1 preview (done).
-- Anything in 2b/2c until those cycles (add/remove, drag-handles, MIDI).
-- Multi-model scene composition in one window (Designer targets one model+scene at
-  a time).
+- 2b/2c features until those cycles.
+- Multi-model composition in one window; frame-exact anything.
