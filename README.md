@@ -13,14 +13,16 @@ Six parameterized physics/particle video models in Godot 4.6. No sound — pure 
 
 ## Preview / tune
 
-    godot --path <model>                                  # schema defaults
-    godot --path <model> -- --preset presets/<name>.json  # start from a preset
+    godot --path <model>                                                           # schema defaults
+    godot --path <model> -- --preset presets/<name>.json                           # start from a preset
+    godot --path <model> -- --designer --preset presets/<name>.json                # tune a scene visually (Designer)
 
 Examples:
 
     godot --path supernova_orbit -- --preset presets/strobe_core.json
     godot --path fluid_swirl -- --preset presets/lava_lamp.json
 
+The Designer writes `scene.json` (the preset file) on every edit, which the preview hot-reloads.
 The preset path is relative to the model's project dir (absolute paths work too).
 Tab toggles the tweak panel: macro dials on top, low-level params below (editing pins
 a param: ✕ unpins), Save/Load JSON presets, Reroll seed, Restart. The Load button is
@@ -150,7 +152,7 @@ button. Descriptions below are from their actual renders.
 
     godot --headless --path radial_burst --script res://core/tests/run_tests.gd
 
-Expected: `TESTS: 62 run, 0 failed`
+Expected: `TESTS: 64 run, 0 failed`
 
 ## Layout
 

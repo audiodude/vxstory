@@ -50,15 +50,56 @@ func _build() -> void:
 			ctrl.add_child(_knob("secs", src, "secs", 1.0, 600.0))
 			ctrl.add_child(_knob("from", src, "from", 0.0, 1.0))
 			ctrl.add_child(_knob("to", src, "to", 0.0, 1.0))
+			var curve_box := VBoxContainer.new()
+			curve_box.alignment = BoxContainer.ALIGNMENT_CENTER
+			var curve_items := ["linear", "ease_in", "ease_out", "smooth"]
+			var curve_opts := OptionButton.new()
+			for c in curve_items:
+				curve_opts.add_item(c)
+			var ci := curve_items.find(str(src.get("curve", "linear")))
+			curve_opts.selected = ci if ci >= 0 else 0
+			curve_opts.item_selected.connect(func(idx):
+				src["curve"] = curve_items[idx]
+				_wire_preview(_prev)
+				changed.emit())
+			curve_box.add_child(curve_opts)
+			var curve_lbl := Label.new()
+			curve_lbl.text = "curve"
+			curve_lbl.add_theme_font_size_override("font_size", 10)
+			curve_box.add_child(curve_lbl)
+			ctrl.add_child(curve_box)
 		"lfo":
 			for i in src.get("oscillators", []).size():
 				var o = src["oscillators"][i]
 				ctrl.add_child(_knob("osc%d.period_sec" % i, o, "period_sec", 1.0, 120.0))
 				ctrl.add_child(_knob("osc%d.amount" % i, o, "amount", 0.0, 1.0))
+				var shape_box := VBoxContainer.new()
+				shape_box.alignment = BoxContainer.ALIGNMENT_CENTER
+				var shape_items := ["sine", "triangle", "saw", "square"]
+				var shape_opts := OptionButton.new()
+				for s_item in shape_items:
+					shape_opts.add_item(s_item)
+				var si := shape_items.find(str(o.get("shape", "sine")))
+				shape_opts.selected = si if si >= 0 else 0
+				shape_opts.item_selected.connect(func(idx):
+					o["shape"] = shape_items[idx]
+					_wire_preview(_prev)
+					changed.emit())
+				shape_box.add_child(shape_opts)
+				var shape_lbl := Label.new()
+				shape_lbl.text = "shape"
+				shape_lbl.add_theme_font_size_override("font_size", 10)
+				shape_box.add_child(shape_lbl)
+				ctrl.add_child(shape_box)
 		"env":
 			ctrl.add_child(_knob("attack", src, "attack", 0.0, 1.0))
 			ctrl.add_child(_knob("decay", src, "decay", 0.0, 2.0))
 			ctrl.add_child(_knob("peak", src, "peak", 0.0, 2.0))
+			var ev_lbl := Label.new()
+			ev_lbl.text = "on: " + str(src.get("event", "?"))
+			ev_lbl.add_theme_color_override("font_color", _color())
+			ev_lbl.add_theme_font_size_override("font_size", 10)
+			ctrl.add_child(ev_lbl)
 
 	for tg in src.get("targets", []):
 		var row := HBoxContainer.new()

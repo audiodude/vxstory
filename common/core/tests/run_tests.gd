@@ -537,6 +537,14 @@ func _find_watcher(n: Node):
 
 const Knob = preload("res://core/designer/knob.gd")
 
+func test_knob_clamps_value() -> void:
+	var k = Knob.new()
+	k.setup(0.0, 10.0, 99.0, 5.0)
+	check_eq(k.value, 10.0, "value clamped to max in setup")
+	k.setup(0.0, 10.0, -3.0, 5.0)
+	check_eq(k.value, 0.0, "value clamped to min in setup")
+	k.free()
+
 func test_knob_frac() -> void:
 	check_eq(Knob.frac(5.0, 0.0, 10.0), 0.5, "midpoint -> 0.5")
 	check_eq(Knob.frac(-1.0, 0.0, 10.0), 0.0, "below min clamps")
@@ -622,6 +630,22 @@ func test_designer_saves_edited_scene() -> void:
 	var res := PIO.load_preset("/tmp/vx_designer_scene.json", m.get_schema(), m.model_name())
 	check(res["ok"], "designer wrote a loadable scene")
 	check_eq(res["preset"]["modulators"]["lfo"][0]["oscillators"][0]["period_sec"], 40.0, "modulators round-trip through the designer's save")
+	m.free(); d.free()
+
+func test_designer_saves_director() -> void:
+	var M = load("res://main.gd")
+	var m = M.new()
+	get_root().add_child(m)
+	m.preset_path = "/tmp/vx_designer_dir.json"
+	m.director_cfg = {"enabled": true, "period_sec": 90.0, "amplitude": 0.3, "macros": ["energy"]}
+	var Designer = load("res://core/designer/designer.gd")
+	var d = Designer.new()
+	get_root().add_child(d)
+	d.setup(m)
+	d.save_now()
+	var res := PIO.load_preset("/tmp/vx_designer_dir.json", m.get_schema(), m.model_name())
+	check(res["ok"], "loads")
+	check_eq(res["preset"]["director"]["period_sec"], 90.0, "director preserved through designer save")
 	m.free(); d.free()
 
 # ---------------- designer live_macro_values ----------------

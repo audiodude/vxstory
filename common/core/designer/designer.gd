@@ -110,7 +110,7 @@ func save_now() -> void:
 	if model.preset_path == "":
 		return
 	var s := current_scene()
-	PresetIO.save_preset(model.preset_path, model.model_name(), model.seed_value, model.duration_sec, s["macros"], s["overrides"], model.jitter, {}, s["modulators"])
+	PresetIO.save_preset(model.preset_path, model.model_name(), model.seed_value, model.duration_sec, s["macros"], s["overrides"], model.jitter, model.director_cfg, s["modulators"])
 
 static func live_macro_values(schema: Dictionary, macros: Dictionary, offsets: Dictionary) -> Dictionary:
 	var out := {}
