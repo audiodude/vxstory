@@ -556,3 +556,29 @@ func test_wave_points_map_range() -> void:
 	check_eq(pts.size(), 5, "one point per sample")
 	check_eq(pts[0].x, 0.0, "first x = 0")
 	check(absf(pts[0].y - 20.0) < 0.001, "value 0 in [-1,1] maps to vertical middle")
+
+# ---------------- designer source card ----------------
+
+const SourceCard = preload("res://core/designer/source_card.gd")
+
+func test_source_card_tween_roundtrip() -> void:
+	var src := {"name": "build", "secs": 275.0, "curve": "linear", "from": 0.0, "to": 1.0,
+		"targets": [{"to": "energy", "amount": 0.45}]}
+	var card = SourceCard.new()
+	get_root().add_child(card)
+	card.setup("tween", src, _demo_schema())
+	var cfg := card.to_config()
+	check_eq(cfg["secs"], 275.0, "tween secs round-trips")
+	check_eq(cfg["targets"][0]["to"], "energy", "target name preserved")
+	check_eq(cfg["targets"][0]["amount"], 0.45, "target amount round-trips")
+	card.free()
+
+func test_source_card_lfo_roundtrip() -> void:
+	var src := {"name": "w", "oscillators": [{"shape": "sine", "period_sec": 40.0, "phase_deg": 0.0, "amount": 0.6}],
+		"targets": [{"to": "grit", "amount": 0.2}]}
+	var card = SourceCard.new()
+	get_root().add_child(card)
+	card.setup("lfo", src, _demo_schema())
+	var cfg := card.to_config()
+	check_eq(cfg["oscillators"][0]["period_sec"], 40.0, "osc period round-trips")
+	card.free()
