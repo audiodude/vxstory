@@ -150,7 +150,7 @@ button. Descriptions below are from their actual renders.
 
     godot --headless --path radial_burst --script res://core/tests/run_tests.gd
 
-Expected: `TESTS: 60 run, 0 failed`
+Expected: `TESTS: 61 run, 0 failed`
 
 ## Layout
 

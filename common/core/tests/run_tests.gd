@@ -605,3 +605,21 @@ func test_bases_edit_updates_macro() -> void:
 	bp.set_macro("energy", 0.8)
 	check_eq(bp.macro_values()["energy"], 0.8, "macro edit reflected in macro_values")
 	bp.free()
+
+# ---------------- designer assembly + scene save ----------------
+
+func test_designer_saves_edited_scene() -> void:
+	var M = load("res://main.gd")
+	var m = M.new()
+	get_root().add_child(m)
+	m.preset_path = "/tmp/vx_designer_scene.json"
+	m.modulators_cfg = {"lfo": [{"name": "w", "oscillators": [{"shape": "sine", "period_sec": 40.0, "phase_deg": 0.0, "amount": 0.6}], "targets": [{"to": "grit", "amount": 0.2}]}]}
+	var Designer = load("res://core/designer/designer.gd")
+	var d = Designer.new()
+	get_root().add_child(d)
+	d.setup(m)
+	d.save_now()  # writes preset_path
+	var res := PIO.load_preset("/tmp/vx_designer_scene.json", m.get_schema(), m.model_name())
+	check(res["ok"], "designer wrote a loadable scene")
+	check_eq(res["preset"]["modulators"]["lfo"][0]["oscillators"][0]["period_sec"], 40.0, "modulators round-trip through the designer's save")
+	m.free(); d.free()
