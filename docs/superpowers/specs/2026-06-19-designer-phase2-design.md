@@ -61,7 +61,14 @@ All previews are drawn from the same `mod_sources` the engine runs — zero drif
 
 ## Layout (settled — see the approved v4 mock)
 
-A compact **~700 px panel, centered** (a tool panel, not full-bleed):
+**Responsive** — the panel fills its window (Godot `Control`s anchored; `HBox`/`VBox`
+containers reflow). **Knobs are fixed-size** (a knob is a knob — never stretches);
+**previews flex** to the available width (wider window = more readable curves);
+**source cards fill the panel width and stack vertically**. A sensible *minimum*
+width prevents knob crowding; there is no hard max — widening just adds breathing
+room and wider previews, never the full-bleed control-stretching of the first
+attempt. (The `~700px` in the mock was a browser stand-in for a compact window,
+not a fixed size.)
 
 ```
 ┌ DESIGNER · radial_burst · pulsar.json        ▶ ▭▭▭|▭ 1:18/5:00 ⟲ ┐
@@ -129,8 +136,9 @@ in-memory scene and saves on change; the file is the bus.
   preview window.
 - **Knob conventions:** vertical-drag · Shift-fine · double-click-reset; pointer =
   base, ring = live modulated value.
-- **Layout:** ~700 px compact centered panel, vertical source stack,
-  preview-on-top (v4 mock approved).
+- **Layout:** **responsive** (fills the window; fixed-size knobs, flexible
+  previews, reflowing cards), vertical source stack, preview-on-top. The v4 mock
+  showed it at a compact width; the real UI scales with the window.
 - **LFO model:** oscillator stack (engine already shipped — `mod_sources.osc` +
   `lfo_value`, shapes sine/triangle/saw/square).
 
