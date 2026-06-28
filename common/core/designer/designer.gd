@@ -27,6 +27,9 @@ func setup(p_model) -> void:
 		# letterbox for renders, so override it here (this process only).
 		win.content_scale_mode = Window.CONTENT_SCALE_MODE_DISABLED
 		win.content_scale_aspect = Window.CONTENT_SCALE_ASPECT_EXPAND
+	var vp := get_viewport()
+	if vp != null:
+		vp.msaa_2d = Viewport.MSAA_4X  # smooth widget/panel edges (renders untouched)
 	_save_timer = Timer.new()
 	_save_timer.one_shot = true
 	_save_timer.wait_time = 0.15

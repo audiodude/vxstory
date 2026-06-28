@@ -40,20 +40,20 @@ static func angle(f: float) -> float:
 func _draw() -> void:
 	var c := size * 0.5
 	var r := minf(size.x, size.y) * 0.42
-	draw_circle(c, r, Color(0.11, 0.13, 0.19))
-	draw_arc(c, r, angle(0.0), angle(1.0), 48, Color(0.24, 0.29, 0.41), 2.0)
+	draw_circle(c, r, Color(0.11, 0.13, 0.19), true, -1.0, true)
+	draw_arc(c, r, angle(0.0), angle(1.0), 64, Color(0.24, 0.29, 0.41), 2.0, true)
 	var vf := frac(value, min_v, max_v)
 	var origin := 0.5 if bipolar else 0.0
 	if bipolar:
 		var ta := angle(0.5)  # unity tick at 12 o'clock
-		draw_line(c + Vector2.from_angle(ta) * (r - 4.0), c + Vector2.from_angle(ta) * (r + 2.0), Color(0.55, 0.6, 0.72), 1.5)
-	draw_arc(c, r, angle(origin), angle(vf), 40, ring_color.darkened(0.15), 2.5)
+		draw_line(c + Vector2.from_angle(ta) * (r - 4.0), c + Vector2.from_angle(ta) * (r + 2.0), Color(0.55, 0.6, 0.72), 1.5, true)
+	draw_arc(c, r, angle(origin), angle(vf), 64, ring_color.darkened(0.15), 2.5, true)
 	if not is_nan(live_v):
 		var lf := frac(live_v, min_v, max_v)
-		draw_arc(c, r, angle(origin), angle(lf), 48, ring_color, 3.0)
-		draw_circle(c + Vector2.from_angle(angle(lf)) * r, 3.5, ring_color)
+		draw_arc(c, r, angle(origin), angle(lf), 64, ring_color, 3.0, true)
+		draw_circle(c + Vector2.from_angle(angle(lf)) * r, 3.5, ring_color, true, -1.0, true)
 	var a := angle(vf)
-	draw_line(c, c + Vector2.from_angle(a) * (r - 2.0), Color(0.88, 0.92, 0.97), 2.0)
+	draw_line(c, c + Vector2.from_angle(a) * (r - 2.0), Color(0.88, 0.92, 0.97), 2.0, true)
 
 func _gui_input(ev: InputEvent) -> void:
 	if ev is InputEventMouseButton and ev.button_index == MOUSE_BUTTON_LEFT:

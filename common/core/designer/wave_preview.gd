@@ -30,6 +30,6 @@ func _draw() -> void:
 	draw_rect(Rect2(Vector2.ZERO, size), Color(0.04, 0.05, 0.08), true)
 	if not _cb.is_valid():
 		return
-	var pts := points(_cb, _lo, _hi, size.x, size.y, maxi(int(size.x / 3.0), 2))
+	var pts := points(_cb, _lo, _hi, size.x, size.y, maxi(int(size.x / 2.0), 2))
 	if pts.size() >= 2:
-		draw_polyline(pts, _color, 1.5)
+		draw_polyline(pts, _color, 2.0, true)
