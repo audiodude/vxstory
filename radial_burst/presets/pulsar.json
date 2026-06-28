@@ -44,7 +44,7 @@
         ],
         "targets": [
           {
-            "amount": 7.44434698224068,
+            "amount": 2.34434698224069,
             "to": "grit"
           }
         ]
@@ -55,14 +55,14 @@
         "curve": "ease_in",
         "from": 0.0,
         "name": "build",
-        "secs": 390.21874974668,
+        "secs": 345.29374974668,
         "targets": [
           {
             "amount": 0.875153368711471,
             "to": "energy"
           },
           {
-            "amount": 0.4,
+            "amount": 2.2,
             "to": "density"
           },
           {
