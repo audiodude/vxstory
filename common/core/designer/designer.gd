@@ -8,6 +8,7 @@ extends CanvasLayer
 const PresetIO = preload("res://core/preset_io.gd")
 const BasesPanel = preload("res://core/designer/bases_panel.gd")
 const SourceCard = preload("res://core/designer/source_card.gd")
+const CONTENT_CAP := 820.0
 
 var model
 var _bases: BasesPanel
@@ -18,6 +19,8 @@ var _t := 0.0
 var _playing := false
 var _scrub: HSlider
 var _macro_knobs := {}  # name -> Knob   (populated from BasesPanel)
+var _outer: MarginContainer
+var _time: Label
 
 func setup(p_model) -> void:
 	model = p_model
@@ -36,23 +39,22 @@ func setup(p_model) -> void:
 	_save_timer.timeout.connect(save_now)
 	add_child(_save_timer)
 	_build()
+	if vp != null:
+		vp.size_changed.connect(_update_cap)
+	_update_cap()
 
 func _build() -> void:
 	var scroll := ScrollContainer.new()
 	scroll.set_anchors_preset(Control.PRESET_FULL_RECT)
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	add_child(scroll)
-	var margin := MarginContainer.new()
-	margin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	margin.add_theme_constant_override("margin_left", 16)
-	margin.add_theme_constant_override("margin_right", 16)
-	margin.add_theme_constant_override("margin_top", 12)
-	margin.add_theme_constant_override("margin_bottom", 12)
-	scroll.add_child(margin)
+	_outer = MarginContainer.new()
+	_outer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(_outer)
 	var col := VBoxContainer.new()
 	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	col.add_theme_constant_override("separation", 12)
-	margin.add_child(col)
+	_outer.add_child(col)
 
 	var title := Label.new()
 	title.text = "DESIGNER · %s · %s" % [model.model_name(), model.preset_path]
@@ -66,6 +68,7 @@ func _build() -> void:
 
 	_macro_knobs = _bases.macro_knobs()
 	var tr := HBoxContainer.new()
+	tr.add_theme_constant_override("separation", 12)
 	var play := Button.new()
 	play.text = "▶"
 	play.toggle_mode = true
@@ -75,9 +78,14 @@ func _build() -> void:
 	_scrub.min_value = 0.0
 	_scrub.max_value = 1.0
 	_scrub.step = 0.001
-	_scrub.custom_minimum_size = Vector2(240, 0)
+	_scrub.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_scrub.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	_scrub.value_changed.connect(func(f): _t = f * maxf(model.duration_sec, 0.0001))
 	tr.add_child(_scrub)
+	_time = Label.new()
+	_time.text = "0:00 / " + _fmt_time(model.duration_sec)
+	_time.add_theme_color_override("font_color", Color(0.68, 0.73, 0.84))
+	tr.add_child(_time)
 	col.add_child(tr)
 	_mod = load("res://core/modulation.gd").from_config(model.modulators_cfg)
 
@@ -106,6 +114,8 @@ func _process(delta: float) -> void:
 	if _playing:
 		_t = fmod(_t + delta, maxf(model.duration_sec, 0.0001))
 		_scrub.set_value_no_signal(_t / maxf(model.duration_sec, 0.0001))
+	if _time != null:
+		_time.text = _fmt_time(_t) + " / " + _fmt_time(model.duration_sec)
 	_mod.t = _t
 	var off: Dictionary = _mod.offsets()
 	var live: Dictionary = live_macro_values(model.get_schema(), _bases.macro_values(), off)
@@ -149,3 +159,18 @@ func _framed(node: Control) -> PanelContainer:
 	panel.add_theme_stylebox_override("panel", sb)
 	panel.add_child(node)
 	return panel
+
+func _update_cap() -> void:
+	var vp := get_viewport()
+	if _outer == null or vp == null:
+		return
+	var w := float(vp.get_visible_rect().size.x)
+	var side := int(maxf(16.0, (w - CONTENT_CAP) * 0.5))
+	_outer.add_theme_constant_override("margin_left", side)
+	_outer.add_theme_constant_override("margin_right", side)
+	_outer.add_theme_constant_override("margin_top", 12)
+	_outer.add_theme_constant_override("margin_bottom", 12)
+
+static func _fmt_time(secs: float) -> String:
+	var s := int(maxf(secs, 0.0))
+	return "%d:%02d" % [s / 60, s % 60]

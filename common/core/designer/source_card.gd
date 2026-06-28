@@ -28,7 +28,7 @@ func _color() -> Color:
 	match kind:
 		"tween": return Color(1.0, 0.8, 0.2)
 		"lfo": return Color(0.4, 1.0, 0.7)
-		_: return Color(1.0, 0.4, 0.6)
+		_: return Color(0.69, 0.49, 1.0)
 
 func _build() -> void:
 	var hdr := Label.new()
@@ -42,11 +42,11 @@ func _build() -> void:
 	_wire_preview(prev)
 	_prev = prev
 
-	var ctrl := HBoxContainer.new()
-	ctrl.add_theme_constant_override("separation", 10)
-	add_child(ctrl)
 	match kind:
 		"tween":
+			var ctrl := HBoxContainer.new()
+			ctrl.add_theme_constant_override("separation", 10)
+			add_child(ctrl)
 			ctrl.add_child(_knob("secs", src, "secs", 1.0, 600.0))
 			ctrl.add_child(_knob("from", src, "from", 0.0, 1.0))
 			ctrl.add_child(_knob("to", src, "to", 0.0, 1.0))
@@ -69,29 +69,15 @@ func _build() -> void:
 			curve_box.add_child(curve_lbl)
 			ctrl.add_child(curve_box)
 		"lfo":
+			var oscs := HBoxContainer.new()
+			oscs.add_theme_constant_override("separation", 8)
+			add_child(oscs)
 			for i in src.get("oscillators", []).size():
-				var o = src["oscillators"][i]
-				ctrl.add_child(_knob("osc%d.period_sec" % i, o, "period_sec", 1.0, 120.0))
-				ctrl.add_child(_knob("osc%d.amount" % i, o, "amount", 0.0, 1.0))
-				var shape_box := VBoxContainer.new()
-				shape_box.alignment = BoxContainer.ALIGNMENT_CENTER
-				var shape_items := ["sine", "triangle", "saw", "square"]
-				var shape_opts := OptionButton.new()
-				for s_item in shape_items:
-					shape_opts.add_item(s_item)
-				var si := shape_items.find(str(o.get("shape", "sine")))
-				shape_opts.selected = si if si >= 0 else 0
-				shape_opts.item_selected.connect(func(idx):
-					o["shape"] = shape_items[idx]
-					_wire_preview(_prev)
-					changed.emit())
-				shape_box.add_child(shape_opts)
-				var shape_lbl := Label.new()
-				shape_lbl.text = "shape"
-				shape_lbl.add_theme_font_size_override("font_size", 10)
-				shape_box.add_child(shape_lbl)
-				ctrl.add_child(shape_box)
+				oscs.add_child(_osc_subcard(i))
 		"env":
+			var ctrl := HBoxContainer.new()
+			ctrl.add_theme_constant_override("separation", 10)
+			add_child(ctrl)
 			ctrl.add_child(_knob("attack", src, "attack", 0.0, 1.0))
 			ctrl.add_child(_knob("decay", src, "decay", 0.0, 2.0))
 			ctrl.add_child(_knob("peak", src, "peak", 0.0, 2.0))
@@ -102,24 +88,36 @@ func _build() -> void:
 			ctrl.add_child(ev_lbl)
 
 	var routes := HFlowContainer.new()
-	routes.add_theme_constant_override("h_separation", 20)
-	routes.add_theme_constant_override("v_separation", 4)
+	routes.add_theme_constant_override("h_separation", 10)
+	routes.add_theme_constant_override("v_separation", 6)
 	add_child(routes)
 	for tg in src.get("targets", []):
+		var chip := PanelContainer.new()
+		var csb := StyleBoxFlat.new()
+		csb.bg_color = Color(0.05, 0.065, 0.10)
+		csb.border_color = Color(0.14, 0.18, 0.27)
+		csb.set_border_width_all(1)
+		csb.set_corner_radius_all(14)
+		csb.content_margin_left = 12
+		csb.content_margin_right = 7
+		csb.content_margin_top = 2
+		csb.content_margin_bottom = 2
+		chip.add_theme_stylebox_override("panel", csb)
 		var item := HBoxContainer.new()
-		item.add_theme_constant_override("separation", 5)
+		item.add_theme_constant_override("separation", 6)
+		chip.add_child(item)
 		var lab := Label.new()
 		lab.text = "→ %s" % str(tg.get("to", "?"))
 		item.add_child(lab)
 		var k = Knob.new()
 		k.setup(-10.0, 10.0, float(tg.get("amount", 0.0)), float(tg.get("amount", 0.0)), _color())
 		k.set_bipolar(true)
-		k.custom_minimum_size = Vector2(34, 34)
+		k.custom_minimum_size = Vector2(30, 30)
 		k.value_changed.connect(func(v):
 			tg["amount"] = v
 			changed.emit())
 		item.add_child(k)
-		routes.add_child(item)
+		routes.add_child(chip)
 
 func _knob(_path: String, holder: Dictionary, key: String, lo: float, hi: float) -> VBoxContainer:
 	return _make_labeled_knob(holder, key, lo, hi, key, false)
@@ -142,6 +140,71 @@ func _make_labeled_knob(holder: Dictionary, key: String, lo: float, hi: float, l
 	l.add_theme_font_size_override("font_size", 10)
 	box.add_child(l)
 	return box
+
+func _osc_subcard(i: int) -> PanelContainer:
+	var o = src["oscillators"][i]
+	var panel := PanelContainer.new()
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.04, 0.06, 0.09)
+	sb.border_color = Color(0.16, 0.19, 0.29)
+	sb.set_border_width_all(1)
+	sb.set_corner_radius_all(5)
+	sb.set_content_margin_all(8)
+	panel.add_theme_stylebox_override("panel", sb)
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 5)
+	panel.add_child(box)
+	var hl := Label.new()
+	hl.text = "OSC %d" % (i + 1)
+	hl.add_theme_font_size_override("font_size", 10)
+	hl.add_theme_color_override("font_color", Color(0.74, 0.82, 0.95))
+	box.add_child(hl)
+	var mini := WavePreview.new()
+	mini.custom_minimum_size = Vector2(130, 22)
+	box.add_child(mini)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 7)
+	box.add_child(row)
+	var shape_items := ["sine", "triangle", "saw", "square"]
+	var shape_opts := OptionButton.new()
+	for s_item in shape_items:
+		shape_opts.add_item(s_item)
+	var si := shape_items.find(str(o.get("shape", "sine")))
+	shape_opts.selected = si if si >= 0 else 0
+	shape_opts.item_selected.connect(func(idx):
+		o["shape"] = shape_items[idx]
+		_wire_osc_mini(mini, o)
+		_wire_preview(_prev)
+		changed.emit())
+	row.add_child(shape_opts)
+	row.add_child(_osc_knob(o, "period_sec", 1.0, 120.0, mini))
+	row.add_child(_osc_knob(o, "amount", 0.0, 1.0, mini))
+	_wire_osc_mini(mini, o)
+	return panel
+
+func _osc_knob(o: Dictionary, key: String, lo: float, hi: float, mini) -> VBoxContainer:
+	var box := VBoxContainer.new()
+	box.alignment = BoxContainer.ALIGNMENT_CENTER
+	var k = Knob.new()
+	k.setup(lo, hi, float(o.get(key, 0.0)), float(o.get(key, 0.0)), _color())
+	k.value_changed.connect(func(v):
+		o[key] = v
+		_wire_osc_mini(mini, o)
+		if _prev != null:
+			_wire_preview(_prev)
+		changed.emit())
+	box.add_child(k)
+	var l := Label.new()
+	l.text = key
+	l.add_theme_font_size_override("font_size", 10)
+	box.add_child(l)
+	return box
+
+func _wire_osc_mini(mini, o: Dictionary) -> void:
+	var period: float = maxf(float(o.get("period_sec", 30.0)), 0.0001)
+	var shape := str(o.get("shape", "sine"))
+	var phase := float(o.get("phase_deg", 0.0))
+	mini.set_sampler(func(x): return MS.osc(x * period * 2.0, period, shape, phase), -1.0, 1.0, _color())
 
 static func _runtime_oscs(scene_oscs: Array) -> Array:
 	# scene format {period_sec, phase_deg} -> mod_sources runtime keys {period, phase}
