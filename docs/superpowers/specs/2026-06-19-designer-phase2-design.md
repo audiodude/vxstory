@@ -110,11 +110,22 @@ in-memory scene and saves on change; the file is the bus.
   oscillators, bases, and routing **amounts**; the transport (play/pause/scrub);
   write `scene.json` on change. **No add/remove** of sources/routings/oscillators
   yet; no drag-handle curve editing. This alone ends hand-editing JSON.
+- **2a-1 — GUI cleanup** (Direction B, mock-approved): capped/centered column
+  (responsive below the cap), OSC 1 / OSC 2 sub-cards with the wav-type pill
+  **inline** with period + amount, transport on its **own full-width row**
+  (▶ · seek · time), routing as a chip row, ENV recolored red→purple, framed
+  cards. Pure visual refinement of 2a — no new capabilities.
 - **2b — Compose scenes.** `[+ LFO/Tween/Env]`, `[+ oscillator]`, `[+ route]`,
   remove buttons, destination dropdowns over the full schema, scene picker /
   save-as.
 - **2c — Direct manipulation + MIDI.** Drag curve/envelope/oscillator handles;
   **MIDI CC** mapping hardware knobs to scene params.
+- **2d — IPC transport sync.** A live channel (localhost socket, or a shared
+  transport file polled like the scene bus) so the Designer and the
+  preview/renderer keep **playhead + play/pause in lock-step** — scrub in one,
+  the other follows. Today the two processes share only `scene.json` (the file
+  bus); 2d adds a *transport* bus alongside it. Designer is the transport master;
+  the preview follows (optionally bidirectional).
 
 ## Verification
 
