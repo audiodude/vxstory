@@ -582,3 +582,9 @@ func test_source_card_lfo_roundtrip() -> void:
 	var cfg := card.to_config()
 	check_eq(cfg["oscillators"][0]["period_sec"], 40.0, "osc period round-trips")
 	card.free()
+
+func test_source_card_runtime_oscs_keys() -> void:
+	var rt = SourceCard._runtime_oscs([{"shape": "sine", "period_sec": 40.0, "phase_deg": 90.0, "amount": 0.6}])
+	check_eq(rt[0]["period"], 40.0, "period_sec -> period for mod_sources")
+	check_eq(rt[0]["phase"], 90.0, "phase_deg -> phase")
+	check_eq(rt[0]["amount"], 0.6, "amount preserved")

@@ -91,6 +91,18 @@ func _make_labeled_knob(holder: Dictionary, key: String, lo: float, hi: float, l
 	box.add_child(l)
 	return box
 
+static func _runtime_oscs(scene_oscs: Array) -> Array:
+	# scene format {period_sec, phase_deg} -> mod_sources runtime keys {period, phase}
+	var rt := []
+	for o in scene_oscs:
+		rt.append({
+			"period": float(o.get("period_sec", 30.0)),
+			"shape": str(o.get("shape", "sine")),
+			"phase": float(o.get("phase_deg", 0.0)),
+			"amount": float(o.get("amount", 1.0)),
+		})
+	return rt
+
 func _wire_preview(prev) -> void:
 	match kind:
 		"tween":
@@ -98,11 +110,12 @@ func _wire_preview(prev) -> void:
 			prev.set_sampler(func(x): return MS.tween(x * secs, secs, str(src.get("curve", "linear")), float(src.get("from", 0.0)), float(src.get("to", 1.0))), 0.0, 1.0, _color())
 		"lfo":
 			var oscs: Array = src.get("oscillators", [])
+			var rt := _runtime_oscs(oscs)
 			var span := 0.0
-			for o in oscs:
-				span = maxf(span, float(o.get("period_sec", 30.0)))
+			for o in rt:
+				span = maxf(span, float(o["period"]))
 			span = maxf(span * 2.0, 0.0001)
-			prev.set_sampler(func(x): return MS.lfo_value(x * span, oscs), -1.0, 1.0, _color())
+			prev.set_sampler(func(x): return MS.lfo_value(x * span, rt), -1.0, 1.0, _color())
 		"env":
 			var dur: float = maxf(float(src.get("attack", 0.01)) + float(src.get("decay", 0.3)), 0.0001)
 			prev.set_sampler(func(x): return MS.envelope(x * dur, float(src.get("attack", 0.01)), float(src.get("decay", 0.3)), float(src.get("peak", 1.0))), 0.0, maxf(float(src.get("peak", 1.0)), 0.0001), _color())
