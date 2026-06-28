@@ -554,6 +554,14 @@ func test_knob_angle_sweep() -> void:
 	check_eq(Knob.angle(0.0), deg_to_rad(135.0), "frac 0 -> 135deg")
 	check_eq(Knob.angle(1.0), deg_to_rad(405.0), "frac 1 -> 135+270 deg")
 
+func test_knob_steps_snap() -> void:
+	var k = Knob.new()
+	k.set_steps([0.25, 0.5, 1.0, 2.0], 0.6)
+	check_eq(k.value, 0.5, "snaps to nearest step (0.6 -> 0.5)")
+	k.set_steps([0.25, 0.5, 1.0, 2.0], 1.7)
+	check_eq(k.value, 2.0, "snaps to nearest step (1.7 -> 2.0)")
+	k.free()
+
 # ---------------- designer wave preview ----------------
 
 const WavePreview = preload("res://core/designer/wave_preview.gd")

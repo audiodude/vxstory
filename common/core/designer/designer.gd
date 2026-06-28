@@ -99,7 +99,7 @@ func _build() -> void:
 		for i in cfg.get(kind, []).size():
 			var card_kind: String = "env" if kind == "envelope" else kind
 			var card = SourceCard.new()
-			card.setup(card_kind, cfg[kind][i], model.get_schema())
+			card.setup(card_kind, cfg[kind][i], model.get_schema(), model.duration_sec)
 			card.changed.connect(_on_changed)
 			col.add_child(_framed(card))
 			_cards.append({"kind": kind, "card": card})
@@ -121,6 +121,8 @@ func _process(delta: float) -> void:
 	var live: Dictionary = live_macro_values(model.get_schema(), _bases.macro_values(), off)
 	for name in _macro_knobs:
 		_macro_knobs[name].set_live(float(live.get(name, 0.0)))
+	for c in _cards:
+		c["card"].set_time(_t)
 
 func current_scene() -> Dictionary:
 	var mods := {}

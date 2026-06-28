@@ -6,6 +6,8 @@ extends VBoxContainer
 const Knob = preload("res://core/designer/knob.gd")
 const WavePreview = preload("res://core/designer/wave_preview.gd")
 const MS = preload("res://core/mod_sources.gd")
+# OSC period as a ratio of the run length; non-linear, evenly-spaced steps on the dial.
+const OSC_PERIOD_RATIOS := [0.01, 0.15, 0.25, 0.4, 0.5, 0.625, 0.75, 1.0, 1.1, 1.25, 1.33, 1.5, 1.75, 2.0, 2.5, 3.0, 5.0, 10.0]
 
 signal changed()
 
@@ -13,16 +15,35 @@ var kind := ""
 var src := {}
 var schema := {}
 var _prev  # WavePreview, set in _build
+var _duration := 300.0  # run length; OSC period dial is a ratio of this
 
-func setup(p_kind: String, p_src: Dictionary, p_schema: Dictionary) -> void:
+func setup(p_kind: String, p_src: Dictionary, p_schema: Dictionary, p_duration := 300.0) -> void:
 	kind = p_kind
 	src = p_src.duplicate(true)
 	schema = p_schema
+	_duration = maxf(p_duration, 0.0001)
 	add_theme_constant_override("separation", 6)
 	_build()
 
 func to_config() -> Dictionary:
 	return src
+
+func set_time(t: float) -> void:
+	# move the preview playhead to run-time t (tween: progress over its secs; lfo: wrap the window)
+	if _prev == null:
+		return
+	match kind:
+		"tween":
+			var secs: float = maxf(float(src.get("secs", 1.0)), 0.0001)
+			_prev.set_playhead(clampf(t / secs, 0.0, 1.0))
+		"lfo":
+			var span := 0.0
+			for o in _runtime_oscs(src.get("oscillators", [])):
+				span = maxf(span, float(o["period"]))
+			span = maxf(span * 2.0, 0.0001)
+			_prev.set_playhead(fposmod(t, span) / span)
+		_:
+			pass
 
 func _color() -> Color:
 	match kind:
@@ -177,7 +198,7 @@ func _osc_subcard(i: int) -> PanelContainer:
 		_wire_preview(_prev)
 		changed.emit())
 	row.add_child(shape_opts)
-	row.add_child(_osc_knob(o, "period_sec", 1.0, 120.0, mini))
+	row.add_child(_osc_period_knob(o, mini))
 	row.add_child(_osc_knob(o, "amount", 0.0, 1.0, mini))
 	_wire_osc_mini(mini, o)
 	return panel
@@ -199,6 +220,33 @@ func _osc_knob(o: Dictionary, key: String, lo: float, hi: float, mini) -> VBoxCo
 	l.add_theme_font_size_override("font_size", 10)
 	box.add_child(l)
 	return box
+
+func _osc_period_knob(o: Dictionary, mini) -> VBoxContainer:
+	var box := VBoxContainer.new()
+	box.alignment = BoxContainer.ALIGNMENT_CENTER
+	var ratio := float(o.get("period_sec", 30.0)) / _duration
+	var k = Knob.new()
+	k.setup(float(OSC_PERIOD_RATIOS[0]), float(OSC_PERIOD_RATIOS[-1]), ratio, ratio, _color())
+	k.set_steps(OSC_PERIOD_RATIOS, ratio)
+	var lbl := Label.new()
+	lbl.text = _fmt_ratio(k.value)
+	lbl.add_theme_font_size_override("font_size", 10)
+	k.value_changed.connect(func(r):
+		o["period_sec"] = r * _duration
+		lbl.text = _fmt_ratio(r)
+		_wire_osc_mini(mini, o)
+		if _prev != null:
+			_wire_preview(_prev)
+		changed.emit())
+	box.add_child(k)
+	box.add_child(lbl)
+	return box
+
+static func _fmt_ratio(r: float) -> String:
+	var s := "%.3f" % r
+	if "." in s:
+		s = s.rstrip("0").rstrip(".")
+	return s
 
 func _wire_osc_mini(mini, o: Dictionary) -> void:
 	var period: float = maxf(float(o.get("period_sec", 30.0)), 0.0001)
