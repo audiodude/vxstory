@@ -545,3 +545,14 @@ func test_knob_frac() -> void:
 func test_knob_angle_sweep() -> void:
 	check_eq(Knob.angle(0.0), deg_to_rad(135.0), "frac 0 -> 135deg")
 	check_eq(Knob.angle(1.0), deg_to_rad(405.0), "frac 1 -> 135+270 deg")
+
+# ---------------- designer wave preview ----------------
+
+const WavePreview = preload("res://core/designer/wave_preview.gd")
+
+func test_wave_points_map_range() -> void:
+	var flat := func(_x): return 0.0
+	var pts := WavePreview.points(flat, -1.0, 1.0, 100.0, 40.0, 5)
+	check_eq(pts.size(), 5, "one point per sample")
+	check_eq(pts[0].x, 0.0, "first x = 0")
+	check(absf(pts[0].y - 20.0) < 0.001, "value 0 in [-1,1] maps to vertical middle")
