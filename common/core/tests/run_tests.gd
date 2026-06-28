@@ -363,15 +363,25 @@ func test_cascade_deterministic() -> void:
 
 const MS = preload("res://core/mod_sources.gd")
 
-func test_modsrc_lfo_sine_range_and_phase() -> void:
-	check_eq(MS.lfo(0.0, 4.0, "sine"), 0.0, "sine at t=0 is 0")
-	check_eq(MS.lfo(1.0, 4.0, "sine"), 1.0, "sine at quarter period is 1")
-	check_eq(MS.lfo(0.0, 0.0, "sine"), 0.0, "rate 0 -> 0 (no div by zero)")
+func test_modsrc_osc_shapes() -> void:
+	check_eq(MS.osc(0.0, 4.0, "sine"), 0.0, "sine at t=0 is 0")
+	check_eq(MS.osc(1.0, 4.0, "sine"), 1.0, "sine at quarter period is 1")
+	check_eq(MS.osc(0.0, 0.0, "sine"), 0.0, "period 0 -> 0 (no div by zero)")
+	check_eq(MS.osc(0.0, 4.0, "square"), 1.0, "square at t=0 is +1")
+	check_eq(MS.osc(3.0, 4.0, "square"), -1.0, "square in the second half is -1")
+	check(MS.osc(0.02, 4.0, "saw") < -0.9, "saw starts near -1")
+	check(absf(MS.osc(2.0, 4.0, "saw")) < 0.01, "saw ~0 at mid-cycle")
 
-func test_modsrc_lfo_drift_bounded() -> void:
-	for i in 50:
-		var v := MS.lfo(float(i) * 0.37, 5.0, "drift")
-		check(v >= -1.0001 and v <= 1.0001, "drift stays within [-1,1]")
+func test_modsrc_osc_phase_degrees() -> void:
+	check(absf(MS.osc(0.0, 4.0, "sine", 90.0) - 1.0) < 0.0001, "90deg phase -> sine peak at t=0")
+
+func test_modsrc_lfo_value_sums_oscillators() -> void:
+	var oscs := [
+		{"shape": "sine", "period": 4.0, "phase": 90.0, "amount": 0.6},
+		{"shape": "sine", "period": 4.0, "phase": 90.0, "amount": 0.4},
+	]
+	check(absf(MS.lfo_value(0.0, oscs) - 1.0) < 0.0001, "summed oscillators = sum of amounts at peak")
+	check_eq(MS.lfo_value(0.0, []), 0.0, "no oscillators -> 0")
 
 func test_modsrc_tween_endpoints_and_curve() -> void:
 	check_eq(MS.tween(0.0, 10.0, "linear", 2.0, 8.0), 2.0, "t=0 -> from")

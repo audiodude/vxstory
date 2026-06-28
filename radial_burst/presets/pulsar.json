@@ -23,7 +23,11 @@
   "jitter": {},
   "modulators": {
     "lfo": [
-      { "name": "grit_wobble", "shape": "drift", "rate_sec": 40.0,
+      { "name": "grit_wobble",
+        "oscillators": [
+          { "shape": "sine", "period_sec": 40.0, "phase_deg": 0.0, "amount": 0.6 },
+          { "shape": "sine", "period_sec": 15.6, "phase_deg": 0.0, "amount": 0.4 }
+        ],
         "targets": [ { "to": "grit", "amount": 0.2 } ] }
     ],
     "tween": [

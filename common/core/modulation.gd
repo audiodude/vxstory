@@ -11,19 +11,23 @@ const MM = preload("res://core/macro_mapper.gd")
 
 var enabled := false
 var t := 0.0
-var lfos: Array = []       # {shape, rate, phase, targets:[{to, amount}]}
+var lfos: Array = []       # {oscillators:[{period, shape, phase, amount}], targets:[{to, amount}]}
 var tweens: Array = []     # {secs, curve, from, to, targets}
 var envelopes: Array = []  # {event, attack, decay, peak, targets, instances:[float]}
 
-static func from_config(cfg: Dictionary, rng_service) -> RefCounted:
+static func from_config(cfg: Dictionary, _rng_service = null) -> RefCounted:
 	var m = new()
 	for d in cfg.get("lfo", []):
-		var nm := str(d.get("name", "lfo"))
-		var r: RandomNumberGenerator = rng_service.stream("mod:" + nm)
+		var oscs := []
+		for o in d.get("oscillators", []):
+			oscs.append({
+				"period": maxf(float(o.get("period_sec", 30.0)), 0.0),
+				"shape": str(o.get("shape", "sine")),
+				"phase": float(o.get("phase_deg", 0.0)),
+				"amount": float(o.get("amount", 1.0)),
+			})
 		m.lfos.append({
-			"shape": str(d.get("shape", "sine")),
-			"rate": maxf(float(d.get("rate_sec", 30.0)), 0.0),
-			"phase": r.randf_range(0.0, TAU),
+			"oscillators": oscs,
 			"targets": m._targets(d),
 		})
 	for d in cfg.get("tween", []):
@@ -70,7 +74,7 @@ func emit(event_name: String) -> void:
 func offsets() -> Dictionary:
 	var d := {}
 	for lfo in lfos:
-		var o := MS.lfo(t, lfo["rate"], lfo["shape"], lfo["phase"])
+		var o := MS.lfo_value(t, lfo["oscillators"])
 		for tg in lfo["targets"]:
 			d[tg["to"]] = float(d.get(tg["to"], 0.0)) + o * float(tg["amount"])
 	for tw in tweens:

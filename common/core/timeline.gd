@@ -90,8 +90,8 @@ func _draw_strip() -> void:
 				col = Color(0.4, 1.0, 0.7)
 				for sx in range(0, int(w), 3):
 					var t := (float(sx) / w) * dur
-					pts.append(Vector2(sx, lerpf(bot, top, (MS.lfo(t, src["rate"], src["shape"], src["phase"]) + 1.0) * 0.5)))
-				cur_frac = (MS.lfo(model.mod_stack.t, src["rate"], src["shape"], src["phase"]) + 1.0) * 0.5
+					pts.append(Vector2(sx, lerpf(bot, top, clampf((MS.lfo_value(t, src["oscillators"]) + 1.0) * 0.5, 0.0, 1.0))))
+				cur_frac = clampf((MS.lfo_value(model.mod_stack.t, src["oscillators"]) + 1.0) * 0.5, 0.0, 1.0)
 			"env":
 				col = Color(1.0, 0.4, 0.6)
 				# one "lightbulb" per concurrent active trigger; the rest sit dim
