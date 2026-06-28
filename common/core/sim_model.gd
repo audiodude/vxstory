@@ -57,10 +57,21 @@ func _ready() -> void:
 		adopt_preset(res["preset"])
 	if cli["duration"] > 0.0:
 		duration_sec = cli["duration"]
+	if cli["designer"]:
+		_attach_designer()
+		return
 	resolve_and_restart()
 	if not movie_mode:
 		_attach_panel()
 		_attach_scene_tools()
+
+func _attach_designer() -> void:
+	var Designer = load("res://core/designer/designer.gd")
+	if Designer == null:
+		return
+	var d = Designer.new()
+	add_child(d)
+	d.setup(self)
 
 func _attach_panel() -> void:
 	var TweakPanel = load("res://core/tweak_panel.gd")

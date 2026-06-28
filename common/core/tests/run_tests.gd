@@ -215,6 +215,13 @@ func test_parse_user_args_empty_and_partial() -> void:
 	var out2 := RD.parse_user_args(PackedStringArray(["--preset"]))
 	check_eq(out2["preset"], "", "dangling flag ignored")
 
+func test_parse_user_args_designer_flag() -> void:
+	var out := RD.parse_user_args(PackedStringArray(["--designer", "--preset", "/tmp/s.json"]))
+	check_eq(out["designer"], true, "--designer parsed as true")
+	check_eq(out["preset"], "/tmp/s.json", "preset still parsed alongside --designer")
+	var out2 := RD.parse_user_args(PackedStringArray([]))
+	check_eq(out2["designer"], false, "no --designer -> false")
+
 # ---------------- tweak panel (instancing smoke) ----------------
 
 func test_tweak_panel_builds_rows() -> void:
