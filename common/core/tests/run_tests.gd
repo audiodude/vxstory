@@ -588,3 +588,20 @@ func test_source_card_runtime_oscs_keys() -> void:
 	check_eq(rt[0]["period"], 40.0, "period_sec -> period for mod_sources")
 	check_eq(rt[0]["phase"], 90.0, "phase_deg -> phase")
 	check_eq(rt[0]["amount"], 0.6, "amount preserved")
+
+# ---------------- designer bases panel ----------------
+
+const BasesPanel = preload("res://core/designer/bases_panel.gd")
+
+func test_bases_param_names_sorted() -> void:
+	var names := BasesPanel.numeric_param_names_sorted(_demo_schema())
+	# _demo_schema numeric params are "speed", "count", "plain" -> sorted
+	check_eq(names, ["count", "plain", "speed"], "numeric params sorted A-Z")
+
+func test_bases_edit_updates_macro() -> void:
+	var bp = BasesPanel.new()
+	get_root().add_child(bp)
+	bp.setup(_demo_schema(), {"energy": 0.5}, {})
+	bp.set_macro("energy", 0.8)
+	check_eq(bp.macro_values()["energy"], 0.8, "macro edit reflected in macro_values")
+	bp.free()
