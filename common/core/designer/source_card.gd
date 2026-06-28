@@ -12,7 +12,7 @@ signal changed()
 var kind := ""
 var src := {}
 var schema := {}
-var _knobs := {}  # path -> Knob (for later animation hooks if needed)
+var _prev  # WavePreview, set in _build
 
 func setup(p_kind: String, p_src: Dictionary, p_schema: Dictionary) -> void:
 	kind = p_kind
@@ -40,6 +40,7 @@ func _build() -> void:
 	prev.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	add_child(prev)
 	_wire_preview(prev)
+	_prev = prev
 
 	var ctrl := HBoxContainer.new()
 	ctrl.add_theme_constant_override("separation", 10)
@@ -81,8 +82,8 @@ func _make_labeled_knob(holder: Dictionary, key: String, lo: float, hi: float, l
 	k.setup(lo, hi, float(holder.get(key, 0.0)), float(holder.get(key, 0.0)), _color())
 	k.value_changed.connect(func(v):
 		holder[key] = v
-		if prev != null:
-			_wire_preview(prev)
+		if _prev != null:
+			_wire_preview(_prev)
 		changed.emit())
 	box.add_child(k)
 	var l := Label.new()
