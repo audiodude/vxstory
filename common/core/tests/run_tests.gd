@@ -623,3 +623,12 @@ func test_designer_saves_edited_scene() -> void:
 	check(res["ok"], "designer wrote a loadable scene")
 	check_eq(res["preset"]["modulators"]["lfo"][0]["oscillators"][0]["period_sec"], 40.0, "modulators round-trip through the designer's save")
 	m.free(); d.free()
+
+# ---------------- designer live_macro_values ----------------
+
+func test_designer_live_macro_values() -> void:
+	var Designer = load("res://core/designer/designer.gd")
+	var live: Dictionary = Designer.live_macro_values(_demo_schema(), {"energy": 0.4}, {"energy": 0.3})
+	check_eq(live["energy"], 0.7, "live macro = clamp(base + offset)")
+	var live2: Dictionary = Designer.live_macro_values(_demo_schema(), {"energy": 0.9}, {"energy": 0.5})
+	check_eq(live2["energy"], 1.0, "live macro clamps to 1")

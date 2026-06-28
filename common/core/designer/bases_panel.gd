@@ -11,6 +11,7 @@ var schema := {}
 var macros := {}
 var overrides := {}
 var _all_box: VBoxContainer
+var _macro_knobs := {}
 
 func setup(p_schema: Dictionary, p_macros: Dictionary, p_overrides: Dictionary) -> void:
 	schema = p_schema
@@ -68,6 +69,9 @@ func _build() -> void:
 		_all_box.visible = not _all_box.visible
 		toggle.text = ("▾ " if _all_box.visible else "▸ ") + "Show all basic params (A–Z)")
 
+func macro_knobs() -> Dictionary:
+	return _macro_knobs
+
 func _macro_knob(m: Dictionary) -> VBoxContainer:
 	var box := VBoxContainer.new()
 	var k = Knob.new()
@@ -79,6 +83,7 @@ func _macro_knob(m: Dictionary) -> VBoxContainer:
 	box.add_child(k)
 	var l := Label.new(); l.text = m["name"]; l.add_theme_font_size_override("font_size", 10)
 	box.add_child(l)
+	_macro_knobs[m["name"]] = k
 	return box
 
 func _param_knob(name: String) -> VBoxContainer:
