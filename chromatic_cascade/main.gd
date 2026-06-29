@@ -277,6 +277,7 @@ func _on_ball_contact(other: Node, ball: Ball) -> void:
 	peg.lit = 1.0
 	var gpos := peg.global_position
 	_fire_fx(fx_pool, "fx", gpos)
+	emit_event("hit")
 	fluid.inject_dye(gpos, peg.color, params["ink_radius"], params["ink_strength"])
 	recent_hits.append({"pos": gpos, "time": sim_t})
 	_check_chain(gpos)
@@ -290,6 +291,7 @@ func _check_chain(at: Vector2) -> void:
 		return
 	recent_hits.clear()
 	_fire_fx(boom_pool, "boom", at)
+	emit_event("shockwave")
 	for d in peg_defs:
 		if d["node"] != null and is_instance_valid(d["node"]):
 			if (d["node"].global_position as Vector2).distance_to(at) < params["chain_radius"]:

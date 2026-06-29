@@ -204,6 +204,7 @@ func _spawn_poly(at: Vector2, radius: float, kick: Vector2) -> void:
 	poly.body_entered.connect(_on_poly_contact.bind(poly))
 	add_child(poly)
 	bodies.append(poly)
+	emit_event("spawn")
 
 func _on_poly_contact(other: Node, poly: Poly) -> void:
 	if not is_instance_valid(poly) or poly.age < params["min_poly_age"]:
@@ -234,6 +235,7 @@ func _shatter(poly: Poly) -> void:
 		age[alive] = 0.0
 		alive += 1
 	_fire_burst(origin)
+	emit_event("shatter")
 	bodies.erase(poly)
 	poly.queue_free()
 
@@ -355,6 +357,7 @@ func _condense(center: Vector2) -> void:
 	avg_col = (avg_col / taken).clamp(Color(0.2, 0.2, 0.2), Color(1, 1, 1))
 	rings.append({"pos": center, "r": 20.0, "alpha": 1.0})
 	_fire_burst(center)
+	emit_event("condense")
 	var radius := clampf(sqrt(float(taken)) * 8.0, 30.0, 160.0)
 	_spawn_poly(center, radius, Vector2(s.randf_range(-60, 60), -220))
 

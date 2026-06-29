@@ -239,6 +239,7 @@ func _spawn_ball() -> void:
 	ball.body_entered.connect(_on_ball_contact.bind(ball))
 	add_child(ball)
 	balls.append(ball)
+	emit_event("spawn")
 
 func _on_ball_contact(other: Node, ball: Ball) -> void:
 	if not is_instance_valid(ball) or not other.is_in_group("pegs"):
@@ -249,6 +250,7 @@ func _on_ball_contact(other: Node, ball: Ball) -> void:
 	peg.lit = 1.0
 	var gpos := peg.global_position
 	_fire_fx(fx_pool, "fx", gpos)
+	emit_event("hit")
 	recent_hits.append({"pos": gpos, "time": sim_t})
 	_check_chain(gpos)
 
@@ -261,6 +263,7 @@ func _check_chain(at: Vector2) -> void:
 		return
 	recent_hits.clear()
 	_fire_fx(boom_pool, "boom", at)
+	emit_event("chain")
 	for d in peg_defs:
 		if d["node"] != null and is_instance_valid(d["node"]):
 			if (d["node"].global_position as Vector2).distance_to(at) < params["chain_radius"]:
