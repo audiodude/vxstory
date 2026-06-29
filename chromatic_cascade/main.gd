@@ -291,7 +291,7 @@ func _check_chain(at: Vector2) -> void:
 		return
 	recent_hits.clear()
 	_fire_fx(boom_pool, "boom", at)
-	emit_event("shockwave")
+	emit_event("chain")  # the chain-blast event (distinct from the `shockwave` macro)
 	for d in peg_defs:
 		if d["node"] != null and is_instance_valid(d["node"]):
 			if (d["node"].global_position as Vector2).distance_to(at) < params["chain_radius"]:

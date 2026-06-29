@@ -16,7 +16,7 @@
        "targets": [{"to": "complexity", "amount": 0.2}]}
     ],
     "envelope": [
-      {"name": "shockwave_hit", "event": "shockwave", "attack": 0.03, "decay": 0.5, "peak": 1.0,
+      {"name": "chain_hit", "event": "chain", "attack": 0.03, "decay": 0.5, "peak": 1.0,
        "targets": [{"to": "ink", "amount": 0.3}]}
     ]
   }

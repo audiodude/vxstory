@@ -74,7 +74,7 @@ authored in the Designer (`--designer`):
 ```
 
 Each source type composes additively each frame. Tweens sweep a macro from a start value
-to an end value over a fixed duration. LFOs sum one or more oscillators (sine/square/saw)
+to an end value over a fixed duration. LFOs sum one or more oscillators (sine/triangle/saw/square)
 to drift a target continuously. Envelopes fire on named model events (attack + decay) and
 stack polyphonically. All modulation is deterministic and clock-driven — the same preset
 plays back identically every render.
