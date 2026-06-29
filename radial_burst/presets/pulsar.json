@@ -2,7 +2,6 @@
   "duration_sec": 300.0,
   "jitter": {},
   "macros": {
-    "coupling": 0.0,
     "density": 0.35,
     "energy": 0.3,
     "grit": 0.4,
@@ -67,7 +66,7 @@
           },
           {
             "amount": 0.7,
-            "to": "coupling"
+            "to": "sympathy"
           },
           {
             "amount": -5.7,

@@ -18,9 +18,6 @@ The 0..1 macro dials — each shifts many low-level params at once.
   strengthening the bilateral or quad-fold reflection (drives `mirror_mix` 0→0.9).
 - **grit** — widens the velocity spread so streaks fan out chaotically instead of
   radiating in a clean shell (drives `speed_spread` 0.25→0.85).
-- **coupling** — enables sympathetic ignition: nearby sources catch fire after a primary
-  burst, with a propagation delay based on distance and `ripple_speed`
-  (drives `sympathy` 0→1).
 
 ## Parameters
 
@@ -92,7 +89,7 @@ Discrete moments emitted for envelope modulation:
 - `cataclysm` — relentless full-screen quad-mirrored detonations every 3 seconds; dense
   white streak fields with heavy spread chaos and fast-fading trails. Pure violence.
 - `pulsar` — 5-minute long-form on the unified modulation model: four burst sources on the
-  12-hue `galton` palette, driven by a tween ("build") that raises energy/density/coupling
+  12-hue `galton` palette, driven by a tween ("build") that raises energy/density/sympathy
   and tightens `loop_period` over 275s (small + rare → large + frequent + sympathetically
   chained), an LFO drifting `grit` for texture, and a per-`burst` envelope flashing the
   ambient `glow`. Seed-shuffled hues, so each render differs.

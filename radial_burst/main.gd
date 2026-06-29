@@ -43,7 +43,6 @@ func get_schema() -> Dictionary:
 		"macros": [
 			PS.macro_def("energy", 0.7), PS.macro_def("density", 0.55),
 			PS.macro_def("symmetry", 0.35), PS.macro_def("grit", 0.4),
-			PS.macro_def("coupling", 0.0),
 		],
 		"params": [
 			PS.f("loop_period", 5.0, 2.0, 12.0, {"live": false, "jitter": {"pct": 10.0}}),
@@ -60,7 +59,7 @@ func get_schema() -> Dictionary:
 			PS.f("ring_width", 5.0, 1.0, 18.0, {"live": false}),
 			PS.i("subburst_count", 9, 0, 24, {"live": false, "macro": {"name": "density", "lo": 2, "hi": 18}}),
 			PS.f("subburst_scale", 0.22, 0.05, 0.5, {"live": false}),
-			PS.f("sympathy", 0.0, 0.0, 1.0, {"macro": {"name": "coupling", "lo": 0.0, "hi": 1.0}}),
+			PS.f("sympathy", 0.0, 0.0, 1.0),  # direct param (was the `coupling` n=1 passthrough macro)
 			PS.f("sympathy_radius", 500.0, 50.0, 1200.0),
 			PS.f("ripple_speed", 1600.0, 200.0, 4000.0),
 			PS.f("hue_drift", 0.0, 0.0, 90.0),

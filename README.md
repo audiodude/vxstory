@@ -112,7 +112,7 @@ button. Descriptions below are from their actual renders.
   white streak fields with heavy spread chaos and fast-fading trails. Pure violence.
 - `pulsar` — 5-minute long-form on the unified modulation model: four burst
   sources on the 12-hue `galton` palette, driven by a **tween** ("build") that
-  raises energy/density/coupling and tightens `loop_period` over 275s (small +
+  raises energy/density/sympathy and tightens `loop_period` over 275s (small +
   rare → large + frequent + sympathetically chained), an **LFO** drifting `grit`
   for texture, and a per-`burst` **envelope** flashing the ambient `glow`. Seed-
   shuffled hues, so each render differs.
