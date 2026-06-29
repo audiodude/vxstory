@@ -664,3 +664,15 @@ func test_designer_live_macro_values() -> void:
 	check_eq(live["energy"], 0.7, "live macro = clamp(base + offset)")
 	var live2: Dictionary = Designer.live_macro_values(_demo_schema(), {"energy": 0.9}, {"energy": 0.5})
 	check_eq(live2["energy"], 1.0, "live macro clamps to 1")
+
+# ---------------- supernova_orbit modulation migration ----------------
+
+func test_supernova_odyssey_is_modulation_native() -> void:
+	var base_path := ProjectSettings.globalize_path("res://")
+	var odyssey_path := base_path.path_join("../supernova_orbit/presets/odyssey.json")
+	var txt := FileAccess.get_file_as_string(odyssey_path)
+	var d = JSON.parse_string(txt)
+	check(d != null, "odyssey.json parses")
+	check(not d.has("director"), "odyssey has no director block")
+	check(d.has("modulators"), "odyssey has modulators")
+	check_eq(d["modulators"]["lfo"].size(), 3, "odyssey has 3 macro-drift LFOs")

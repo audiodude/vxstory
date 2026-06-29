@@ -219,6 +219,7 @@ func _spawn_particles(delta: float) -> void:
 
 func _fission(c: Dictionary) -> void:
 	# Half-strength detonation event + split into two cores
+	emit_event("fission")
 	flash_a = 0.45
 	det_cooldown = 5.0
 	rings.append({"r": 40.0, "speed": 900.0, "alpha": 1.0, "origin": c["pos"]})
@@ -247,6 +248,7 @@ func _fission(c: Dictionary) -> void:
 	_wipe_t = 0.6
 
 func _detonate(c: Dictionary) -> void:
+	emit_event("detonation")
 	flash_a = 0.9
 	det_cooldown = 5.0
 	var cpos: Vector2 = c["pos"]
@@ -464,6 +466,7 @@ func _process(delta: float) -> void:
 			if total_mass > 0.0:
 				c0["vel"] = (v0 * m0 + v1 * m1) / total_mass
 			c0["mass"] = total_mass
+			emit_event("merge")
 			flash_a = 0.5
 			# Free the loser's rect before removing
 			var loser_rect: ColorRect = c1["rect"]

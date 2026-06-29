@@ -15,14 +15,24 @@
     "glow": 0.15
   },
   "jitter": {},
-  "director": {
-    "enabled": true,
-    "period_sec": 60.0,
-    "amplitude": 0.45,
-    "macros": [
-      "accretion",
-      "chaos",
-      "duality"
+  "modulators": {
+    "lfo": [
+      {"name": "accretion_drift", "oscillators": [
+        {"shape": "sine", "period_sec": 60.0, "phase_deg": 0.0, "amount": 0.6},
+        {"shape": "sine", "period_sec": 83.0, "phase_deg": 40.0, "amount": 0.4}],
+       "targets": [{"to": "accretion", "amount": 0.45}]},
+      {"name": "chaos_drift", "oscillators": [
+        {"shape": "sine", "period_sec": 60.0, "phase_deg": 120.0, "amount": 0.6},
+        {"shape": "sine", "period_sec": 83.0, "phase_deg": 200.0, "amount": 0.4}],
+       "targets": [{"to": "chaos", "amount": 0.45}]},
+      {"name": "duality_drift", "oscillators": [
+        {"shape": "sine", "period_sec": 60.0, "phase_deg": 240.0, "amount": 0.6},
+        {"shape": "sine", "period_sec": 83.0, "phase_deg": 300.0, "amount": 0.4}],
+       "targets": [{"to": "duality", "amount": 0.45}]}
+    ],
+    "envelope": [
+      {"name": "flash", "event": "detonation", "attack": 0.05, "decay": 0.6, "peak": 1.0,
+       "targets": [{"to": "chaos", "amount": 0.2}]}
     ]
   }
 }

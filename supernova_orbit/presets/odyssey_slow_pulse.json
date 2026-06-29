@@ -1,18 +1,7 @@
 {
-  "director": {
-    "amplitude": 0.3,
-    "enabled": true,
-    "macros": [
-      "accretion",
-      "chaos",
-      "duality"
-    ],
-    "period_sec": 90.0
-  },
+  "model": "supernova_orbit",
+  "seed": 31416,
   "duration_sec": 300.0,
-  "jitter": {
-
-  },
   "macros": {
     "accretion": 0.76316478351059,
     "chaos": 0.21777337390805,
@@ -20,7 +9,6 @@
     "detonation": 0.7,
     "duality": 0.809793606796146
   },
-  "model": "supernova_orbit",
   "overrides": {
     "glow": 0.15,
     "hue_drift": 14.0,
@@ -28,5 +16,25 @@
     "pulse_rate": 0.35,
     "trail_persist": 0.065
   },
-  "seed": 31416
+  "jitter": {},
+  "modulators": {
+    "lfo": [
+      {"name": "accretion_drift", "oscillators": [
+        {"shape": "sine", "period_sec": 90.0, "phase_deg": 0.0, "amount": 0.6},
+        {"shape": "sine", "period_sec": 127.0, "phase_deg": 40.0, "amount": 0.4}],
+       "targets": [{"to": "accretion", "amount": 0.3}]},
+      {"name": "chaos_drift", "oscillators": [
+        {"shape": "sine", "period_sec": 90.0, "phase_deg": 120.0, "amount": 0.6},
+        {"shape": "sine", "period_sec": 127.0, "phase_deg": 200.0, "amount": 0.4}],
+       "targets": [{"to": "chaos", "amount": 0.3}]},
+      {"name": "duality_drift", "oscillators": [
+        {"shape": "sine", "period_sec": 90.0, "phase_deg": 240.0, "amount": 0.6},
+        {"shape": "sine", "period_sec": 127.0, "phase_deg": 300.0, "amount": 0.4}],
+       "targets": [{"to": "duality", "amount": 0.3}]}
+    ],
+    "envelope": [
+      {"name": "flash", "event": "detonation", "attack": 0.05, "decay": 0.6, "peak": 1.0,
+       "targets": [{"to": "chaos", "amount": 0.2}]}
+    ]
+  }
 }
