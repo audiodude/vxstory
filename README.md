@@ -57,22 +57,27 @@ JSON files in `<model>/presets/`. Format:
 - `jitter` — seeded per-param noise: `{"pct": 15}` (±15%) or `{"abs": 2}` (±2 units)
 - Same preset + different `seed` = visually related but uniquely different variant
 
-### Director
+### Modulation
 
-An optional preset key that drifts selected macros over time via smooth seeded curves,
-keeping long-form renders visually varied without manual keyframing:
+An optional preset key that animates macros and params over time via composable sources
+authored in the Designer (`--designer`):
 
 ```json
-"director": {"enabled": true, "period_sec": 90.0, "amplitude": 0.3,
-             "macros": ["accretion", "chaos", "duality"]}
+"modulators": {
+  "tween": [{"name": "build", "secs": 275.0, "curve": "ease_in", "from": 0.0, "to": 1.0,
+             "targets": [{"to": "energy", "amount": 0.5}]}],
+  "lfo":   [{"name": "drift", "oscillators": [{"shape": "sine", "period_sec": 40.0,
+             "phase_deg": 0.0, "amount": 0.6}], "targets": [{"to": "grit", "amount": 0.2}]}],
+  "envelope": [{"name": "flash", "event": "burst", "attack": 0.05, "decay": 0.4, "peak": 1.0,
+               "targets": [{"to": "glow", "amount": 1.0}]}]
+}
 ```
 
-Each listed macro follows `clamp(base + amplitude × drift(t), 0, 1)` where `base` is
-the preset's macro value and `drift(t)` is two incommensurate seeded sines — smooth,
-bounded, reproducible. The director ticks in `SimModel._process` and re-resolves live
-params at 4 Hz. When the director is active, the tweak panel shows a cyan indicator;
-user edits to a macro slider **rebase** that macro's center, so manual adjustments
-still take effect and accumulate correctly.
+Each source type composes additively each frame. Tweens sweep a macro from a start value
+to an end value over a fixed duration. LFOs sum one or more oscillators (sine/square/saw)
+to drift a target continuously. Envelopes fire on named model events (attack + decay) and
+stack polyphonically. All modulation is deterministic and clock-driven — the same preset
+plays back identically every render.
 
 ### Models vs presets vs seeds
 
@@ -142,17 +147,17 @@ button. Descriptions below are from their actual renders.
   ominous 30-second charge toward a single massive detonation (void palette).
 - `strobe_core` — emerald accretion at maximum inflow with a hair-trigger core:
   detonation rings every few seconds, each clearing the disk to start again.
-- `odyssey` — 5-minute director-driven journey: two gravitationally interacting cores
+- `odyssey` — 5-minute modulation-driven journey: two gravitationally interacting cores
   fission, orbit, and merge while an accumulating wireframe debris belt rings the
   blast sites; solar palette hue drifts 70° across the run so early amber warmth
-  cools through teal by the end. The director continuously modulates accretion, chaos,
-  and duality over 90-second cycles — no two minutes look the same.
+  cools through teal by the end. Three LFOs continuously drift accretion, chaos, and
+  duality over incommensurate periods — no two minutes look the same.
 
 ## Tests
 
     godot --headless --path radial_burst --script res://core/tests/run_tests.gd
 
-Expected: `TESTS: 66 run, 0 failed`
+Expected: `TESTS: 61 run, 0 failed`
 
 ## Layout
 
@@ -160,7 +165,7 @@ Expected: `TESTS: 66 run, 0 failed`
 vxstory/
   common/
     core/          # framework: RNGService, ParamSchema, MacroMapper, PresetIO,
-    │              #            RenderDriver, SimModel, TweakPanel, Director
+    │              #            RenderDriver, SimModel, TweakPanel, ModStack
     fluid_sim/     # shared ping-pong dye advection sim + shaders
   <model>/
     core -> ../common/core          # symlink

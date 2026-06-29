@@ -237,59 +237,6 @@ func test_tweak_panel_builds_rows() -> void:
 	panel.free()
 	model.free()
 
-# ---------------- director ----------------
-
-const Director = preload("res://core/director.gd")
-
-func _dir_cfg() -> Dictionary:
-	return {"enabled": true, "period_sec": 60.0, "amplitude": 0.3, "macros": ["energy", "bogus"]}
-
-func test_director_disabled_by_default() -> void:
-	var d = Director.from_config({}, {"energy": 0.5}, RNGService.new(3))
-	check_eq(d.enabled, false, "empty config -> disabled")
-	var macros := {"energy": 0.5}
-	check_eq(d.apply(macros), false, "disabled apply is a no-op")
-	check_eq(macros["energy"], 0.5, "macros untouched when disabled")
-
-func test_director_deterministic_and_clamped() -> void:
-	var a = Director.from_config(_dir_cfg(), {"energy": 0.9}, RNGService.new(7))
-	var b = Director.from_config(_dir_cfg(), {"energy": 0.9}, RNGService.new(7))
-	for i in 50:
-		a.tick(0.5)
-		b.tick(0.5)
-		var va: float = a.current("energy")
-		check_eq(va, b.current("energy"), "same seed -> same drift curve")
-		check(va >= 0.0 and va <= 1.0, "drift clamped to 0..1")
-
-func test_director_ignores_unknown_macros() -> void:
-	var d = Director.from_config(_dir_cfg(), {"energy": 0.5}, RNGService.new(7))
-	check_eq(d.macro_names.size(), 1, "unknown macro 'bogus' dropped")
-
-func test_director_apply_and_rebase() -> void:
-	var d = Director.from_config(_dir_cfg(), {"energy": 0.5}, RNGService.new(7))
-	d.tick(13.0)
-	var macros := {"energy": 0.5}
-	check_eq(d.apply(macros), true, "apply reports change")
-	check(absf(macros["energy"] - 0.5) > 0.0001, "macro drifted from base")
-	d.rebase("energy", 0.9)
-	d.apply(macros)
-	var hi: float = macros["energy"]
-	d.rebase("energy", 0.1)
-	d.apply(macros)
-	check(hi > macros["energy"], "rebase shifts the curve's center")
-
-func test_preset_roundtrip_director() -> void:
-	var path := "/tmp/vx_test_director.json"
-	var err := PIO.save_preset(path, "demo", 1, 10.0, {}, {}, {}, _dir_cfg())
-	check_eq(err, OK, "save with director ok")
-	var res := PIO.load_preset(path, _demo_schema(), "demo")
-	check(res["ok"], "load ok")
-	check_eq(res["preset"]["director"]["period_sec"], 60.0, "director roundtrips")
-	# absent director -> empty dict default
-	PIO.save_preset(path, "demo", 1, 10.0, {}, {}, {})
-	var res2 := PIO.load_preset(path, _demo_schema(), "demo")
-	check_eq(res2["preset"]["director"], {}, "missing director defaults to {}")
-
 # ---------------- preset modulators ----------------
 
 func test_preset_modulators_roundtrip_and_warn() -> void:
@@ -315,6 +262,16 @@ func test_preset_modulators_absent_defaults_empty() -> void:
 	fa.close()
 	var res := PIO.load_preset(path, _demo_schema(), "demo")
 	check_eq(res["preset"]["modulators"], {}, "absent modulators -> {}")
+
+func test_preset_ignores_legacy_director() -> void:
+	var path := "/tmp/vx_legacy_director.json"
+	var fa := FileAccess.open(path, FileAccess.WRITE)
+	fa.store_string(JSON.stringify({"model": "demo", "director": {"enabled": true, "macros": ["energy"]}}))
+	fa.close()
+	var res := PIO.load_preset(path, _demo_schema(), "demo")
+	check(res["ok"], "loads despite legacy director key")
+	check(not res["preset"].has("director"), "director key is dropped, not carried")
+	check(res["warnings"].size() >= 1, "warns about the ignored director key")
 
 # ---------------- hue ----------------
 
@@ -638,22 +595,6 @@ func test_designer_saves_edited_scene() -> void:
 	var res := PIO.load_preset("/tmp/vx_designer_scene.json", m.get_schema(), m.model_name())
 	check(res["ok"], "designer wrote a loadable scene")
 	check_eq(res["preset"]["modulators"]["lfo"][0]["oscillators"][0]["period_sec"], 40.0, "modulators round-trip through the designer's save")
-	m.free(); d.free()
-
-func test_designer_saves_director() -> void:
-	var M = load("res://main.gd")
-	var m = M.new()
-	get_root().add_child(m)
-	m.preset_path = "/tmp/vx_designer_dir.json"
-	m.director_cfg = {"enabled": true, "period_sec": 90.0, "amplitude": 0.3, "macros": ["energy"]}
-	var Designer = load("res://core/designer/designer.gd")
-	var d = Designer.new()
-	get_root().add_child(d)
-	d.setup(m)
-	d.save_now()
-	var res := PIO.load_preset("/tmp/vx_designer_dir.json", m.get_schema(), m.model_name())
-	check(res["ok"], "loads")
-	check_eq(res["preset"]["director"]["period_sec"], 90.0, "director preserved through designer save")
 	m.free(); d.free()
 
 # ---------------- designer live_macro_values ----------------

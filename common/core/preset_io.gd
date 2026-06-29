@@ -1,7 +1,7 @@
 extends RefCounted
 # JSON preset load/save + validation against a schema.
 
-static func save_preset(path: String, model: String, seed_value: int, duration_sec: float, macros: Dictionary, overrides: Dictionary, jitter: Dictionary, director: Dictionary = {}, modulators: Dictionary = {}) -> Error:
+static func save_preset(path: String, model: String, seed_value: int, duration_sec: float, macros: Dictionary, overrides: Dictionary, jitter: Dictionary, modulators: Dictionary = {}) -> Error:
 	var ov := {}
 	for k in overrides:
 		ov[k] = ("#" + overrides[k].to_html(false)) if overrides[k] is Color else overrides[k]
@@ -13,8 +13,6 @@ static func save_preset(path: String, model: String, seed_value: int, duration_s
 		"overrides": ov,
 		"jitter": jitter,
 	}
-	if not director.is_empty():
-		doc["director"] = director
 	if not modulators.is_empty():
 		doc["modulators"] = modulators
 	var fa := FileAccess.open(path, FileAccess.WRITE)
@@ -49,8 +47,8 @@ static func load_preset(path: String, schema: Dictionary, model: String) -> Dict
 		for k in data.get(section, {}):
 			if not known_params.has(k):
 				warnings.append("unknown param in %s: %s" % [section, str(k)])
-	var raw_director = data.get("director", {})
-	var director: Dictionary = raw_director if raw_director is Dictionary else {}
+	if data.has("director"):
+		warnings.append("legacy 'director' key ignored; migrate to modulators")
 	var raw_mod = data.get("modulators", {})
 	var modulators: Dictionary = raw_mod if raw_mod is Dictionary else {}
 	for kind in ["lfo", "tween", "envelope"]:
@@ -66,7 +64,6 @@ static func load_preset(path: String, schema: Dictionary, model: String) -> Dict
 		"macros": data.get("macros", {}),
 		"overrides": data.get("overrides", {}),
 		"jitter": data.get("jitter", {}),
-		"director": director,
 		"modulators": modulators,
 	}
 	return {"ok": true, "error": "", "warnings": warnings, "preset": preset}

@@ -11,7 +11,6 @@ var _hint: Label
 var _param_rows: Dictionary = {}  # name -> {control, clear_btn, set_value(v)}
 var _macro_sliders: Dictionary = {}
 var _seed_edit: LineEdit
-var _drift_acc := 0.0
 
 func _init(p_model) -> void:
 	model = p_model
@@ -42,10 +41,6 @@ func _build_ui() -> void:
 	_hint.visible = false
 	vbox.add_child(_hint)
 
-	if model.director_cfg.get("enabled", false):
-		var dir_label := _title("DIRECTOR ACTIVE — macros drift")
-		dir_label.add_theme_color_override("font_color", Color.CYAN)
-		vbox.add_child(dir_label)
 	vbox.add_child(_title("MACROS"))
 	for m in model.get_schema()["macros"]:
 		_build_macro_row(vbox, m)
@@ -103,8 +98,6 @@ func _build_macro_row(vbox: VBoxContainer, m: Dictionary) -> void:
 	slider.value_changed.connect(func(v):
 		model.macros[m["name"]] = v
 		val.text = "%.2f" % v
-		if model.director != null:
-			model.director.rebase(m["name"], v)
 		_on_macro_changed())
 	var entry := {"slider": slider, "val": val, "dragging": false}
 	slider.drag_started.connect(func(): entry["dragging"] = true)
@@ -257,28 +250,6 @@ func _refresh_all() -> void:
 	_seed_edit.text = str(model.seed_value)
 	_refresh_param_values()
 	_hint.visible = false
-
-func _process(delta: float) -> void:
-	# Mirror director-driven macro drift into the UI (4 Hz, matching SimModel's
-	# apply cadence). set_value_no_signal avoids re-triggering rebase; sliders
-	# mid-drag and overridden params are left alone so user edits aren't yanked.
-	if model == null or model.director == null or not model.director.enabled:
-		return
-	_drift_acc += delta
-	if _drift_acc < 0.25:
-		return
-	_drift_acc = 0.0
-	for m_name in _macro_sliders:
-		var entry: Dictionary = _macro_sliders[m_name]
-		if entry["dragging"]:
-			continue
-		var v := float(model.macros[m_name])
-		entry["slider"].set_value_no_signal(v)
-		entry["val"].text = "%.2f" % v
-	for p in model.get_schema()["params"]:
-		var p_name: String = p["name"]
-		if not model.overrides.has(p_name) and model.params.has(p_name):
-			(_param_rows[p_name]["set_value"] as Callable).call(model.params[p_name])
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and event.keycode == KEY_TAB:

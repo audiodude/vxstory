@@ -8,7 +8,6 @@ const RNGService = preload("res://core/rng_service.gd")
 const MacroMapper = preload("res://core/macro_mapper.gd")
 const PresetIO = preload("res://core/preset_io.gd")
 const RenderDriver = preload("res://core/render_driver.gd")
-const DirectorScript = preload("res://core/director.gd")
 const ModStack = preload("res://core/modulation.gd")
 
 var seed_value: int = 1
@@ -18,11 +17,8 @@ var overrides: Dictionary = {}
 var jitter: Dictionary = {}
 var params: Dictionary = {}
 var rng  # RNGService
-var director  # Director (always constructed; may be disabled)
-var director_cfg: Dictionary = {}
 var mod_stack  # ModStack (null until resolve_and_restart)
 var modulators_cfg: Dictionary = {}
-var _dir_acc := 0.0
 var movie_mode: bool = false
 var _elapsed: float = 0.0
 var preset_path: String = ""
@@ -97,13 +93,11 @@ func adopt_preset(p: Dictionary) -> void:
 		macros[k] = float(p["macros"][k])
 	overrides = p["overrides"].duplicate()
 	jitter = p["jitter"].duplicate()
-	director_cfg = p.get("director", {})
 	modulators_cfg = p.get("modulators", {})
 
 func resolve_and_restart() -> void:
 	rng = RNGService.new(seed_value)
 	mod_stack = ModStack.from_config(modulators_cfg, rng)
-	director = DirectorScript.from_config(director_cfg, macros, rng)
 	_compose()
 	restart()
 
@@ -151,20 +145,13 @@ func emit_event(event_name: String) -> void:
 		mod_stack.emit(event_name)
 
 func save_to(path: String) -> Error:
-	return PresetIO.save_preset(path, model_name(), seed_value, duration_sec, macros, overrides, jitter, director_cfg, modulators_cfg)
+	return PresetIO.save_preset(path, model_name(), seed_value, duration_sec, macros, overrides, jitter, modulators_cfg)
 
 func _process(delta: float) -> void:
 	if mod_stack != null and mod_stack.enabled:
 		mod_stack.tick(delta)
 		_compose()
 		apply_live(params)
-	elif director != null and director.enabled:
-		director.tick(delta)
-		_dir_acc += delta
-		if _dir_acc >= 0.25:
-			_dir_acc = 0.0
-			if director.apply(macros):
-				resolve_live()
 	if movie_mode:
 		_elapsed += delta
 		if _elapsed >= duration_sec:
