@@ -122,18 +122,26 @@ button. Descriptions below are from their actual renders.
   like flame in oil, high viscosity so shapes linger and ooze.
 - `maelstrom` — saturated cyan/magenta/yellow turbulence at 8 vortices; the whole canvas
   shreds and recombines continuously, edge-to-edge color with no rest.
+- `aurora` — 5-minute long-form modulation: a tween builds turbulence and flow from
+  calm to active over 275s; a slow 75s LFO drifts vibrance for colour breathing. No
+  envelope (fluid emits no discrete events).
 
 **peg_cascade**
 - `zen_garden` — grayscale meditation: dim mono pegs in loose rings, occasional white
   balls drifting through with soft glows, sparse pops. The calm one.
 - `pachinko_riot` — hot-pink and cyan pegs, fast ball stream, spinning hubs, constant
   chain explosions carving holes that respawn and refill.
+- `clockwork` — 5-minute long-form modulation: a tween builds ball rate and fx from
+  sparse to dense over 275s; a 45s LFO oscillates complexity; each `chain` event
+  triggers an fx envelope pop.
 
 **chromatic_cascade**
 - `watercolor` — luminous pastel pools (teal/pink/white) spreading slowly beneath the
   pegs; subtle ball wakes tint the wash; near-permanent dye so the painting accumulates.
 - `paintstorm` — neon pegs over storm-front clouds of magenta and white ink; yellow-green
   balls; big shockwaves smear the whole field every chain.
+- `fresco` — 5-minute long-form modulation: a tween builds ball rate and ink spread over
+  275s; a 60s LFO breathes complexity; each `shockwave` event flashes an ink envelope.
 
 **matter_cycle**
 - `slow_genesis` — long stretches of near-empty black; lone white wireframe polygons
@@ -141,6 +149,9 @@ button. Descriptions below are from their actual renders.
   its moments.
 - `grinder` — multicolor wireframes shattering on contact into white-hot particle spray;
   condensation rings fire constantly; matter churns through the full cycle in seconds.
+- `tides` — 5-minute long-form modulation: a tween builds matter density and cycle speed
+  over 275s; a 90s LFO undulates turbulence; each `shatter` event spikes a fragility
+  envelope.
 
 **supernova_orbit**
 - `slow_burn` — three violet-and-teal spiral arms feed a purple core through one long,

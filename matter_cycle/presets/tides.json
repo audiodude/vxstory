@@ -1,0 +1,23 @@
+{
+  "model": "matter_cycle",
+  "seed": 7777,
+  "duration_sec": 300.0,
+  "macros": {"matter": 0.4, "fragility": 0.4, "turbulence": 0.4, "cycle_speed": 0.4},
+  "overrides": {},
+  "jitter": {},
+  "modulators": {
+    "tween": [
+      {"name": "build", "secs": 275.0, "curve": "ease_in", "from": 0.0, "to": 1.0,
+       "targets": [{"to": "matter", "amount": 0.5}, {"to": "cycle_speed", "amount": 0.4}]}
+    ],
+    "lfo": [
+      {"name": "texture", "oscillators": [
+        {"shape": "sine", "period_sec": 90.0, "phase_deg": 0.0, "amount": 1.0}],
+       "targets": [{"to": "turbulence", "amount": 0.3}]}
+    ],
+    "envelope": [
+      {"name": "shatter_hit", "event": "shatter", "attack": 0.05, "decay": 0.6, "peak": 1.0,
+       "targets": [{"to": "fragility", "amount": 0.3}]}
+    ]
+  }
+}

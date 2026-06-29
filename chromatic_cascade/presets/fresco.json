@@ -1,0 +1,23 @@
+{
+  "model": "chromatic_cascade",
+  "seed": 2048,
+  "duration_sec": 300.0,
+  "macros": {"complexity": 0.4, "ball_rate": 0.3, "ink": 0.4, "shockwave": 0.4},
+  "overrides": {},
+  "jitter": {},
+  "modulators": {
+    "tween": [
+      {"name": "build", "secs": 275.0, "curve": "ease_in", "from": 0.0, "to": 1.0,
+       "targets": [{"to": "ball_rate", "amount": 0.5}, {"to": "ink", "amount": 0.4}]}
+    ],
+    "lfo": [
+      {"name": "texture", "oscillators": [
+        {"shape": "sine", "period_sec": 60.0, "phase_deg": 0.0, "amount": 1.0}],
+       "targets": [{"to": "complexity", "amount": 0.2}]}
+    ],
+    "envelope": [
+      {"name": "shockwave_hit", "event": "shockwave", "attack": 0.03, "decay": 0.5, "peak": 1.0,
+       "targets": [{"to": "ink", "amount": 0.3}]}
+    ]
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "model": "fluid_swirl",
+  "seed": 4242,
+  "duration_sec": 300.0,
+  "macros": {"turbulence": 0.4, "viscosity": 0.5, "flow": 0.4, "vibrance": 0.5},
+  "overrides": {},
+  "jitter": {},
+  "modulators": {
+    "tween": [
+      {"name": "build", "secs": 275.0, "curve": "ease_in", "from": 0.0, "to": 1.0,
+       "targets": [{"to": "turbulence", "amount": 0.45}, {"to": "flow", "amount": 0.4}]}
+    ],
+    "lfo": [
+      {"name": "texture", "oscillators": [
+        {"shape": "sine", "period_sec": 75.0, "phase_deg": 0.0, "amount": 1.0}],
+       "targets": [{"to": "vibrance", "amount": 0.25}]}
+    ],
+    "envelope": []
+  }
+}
