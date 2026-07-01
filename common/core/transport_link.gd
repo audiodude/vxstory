@@ -1,10 +1,12 @@
 extends Node
 # Bidirectional localhost UDP transport bus between the Designer and the preview.
-# Role-based fixed port pair. Sends {t, playing} on transport events; emits
-# `remote(t, playing)` on receive. process_mode ALWAYS so it keeps polling even
-# when the sim is paused via Engine.time_scale.
+# Role-based fixed port pair. Messages carry {t, playing, kind}; `kind` is:
+#   "seek"   — a scrub: move the playhead only (NEVER changes play/pause)
+#   "toggle" — a play/pause change: set play/pause (and seek to t)
+#   "tick"   — the playing master's per-frame clock, so the follower stays locked
+# process_mode ALWAYS so it keeps polling even when the sim is paused (time_scale 0).
 
-signal remote(t: float, playing: bool)
+signal remote(t: float, playing: bool, kind: String)
 
 const BASE_PORT := 47615
 
@@ -26,18 +28,18 @@ static func ports_for(role: String) -> Dictionary:
 		return {"listen": BASE_PORT, "send": BASE_PORT + 1}
 	return {"listen": BASE_PORT + 1, "send": BASE_PORT}
 
-static func encode(t: float, playing: bool) -> PackedByteArray:
-	return JSON.stringify({"t": t, "playing": playing}).to_utf8_buffer()
+static func encode(t: float, playing: bool, kind: String) -> PackedByteArray:
+	return JSON.stringify({"t": t, "playing": playing, "kind": kind}).to_utf8_buffer()
 
 static func decode(bytes: PackedByteArray):
 	var d = JSON.parse_string(bytes.get_string_from_utf8())
 	if typeof(d) != TYPE_DICTIONARY or not d.has("t"):
 		return null
-	return {"t": float(d["t"]), "playing": bool(d.get("playing", false))}
+	return {"t": float(d["t"]), "playing": bool(d.get("playing", false)), "kind": str(d.get("kind", "toggle"))}
 
-func send(t: float, playing: bool) -> void:
+func send(t: float, playing: bool, kind: String) -> void:
 	if _ok:
-		_udp.put_packet(encode(t, playing))
+		_udp.put_packet(encode(t, playing, kind))
 
 func _process(_delta: float) -> void:
 	if not _ok:
@@ -45,4 +47,4 @@ func _process(_delta: float) -> void:
 	while _udp.get_available_packet_count() > 0:
 		var d = decode(_udp.get_packet())
 		if d != null:
-			remote.emit(d["t"], d["playing"])
+			remote.emit(d["t"], d["playing"], d["kind"])

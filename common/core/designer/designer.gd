@@ -82,7 +82,7 @@ func _build() -> void:
 	_play.toggled.connect(func(on):
 		_playing = on
 		if not _applying_remote and _link != null:
-			_link.send(_t, _playing))
+			_link.send(_t, _playing, "toggle"))
 	tr.add_child(_play)
 	_scrub = HSlider.new()
 	_scrub.min_value = 0.0
@@ -93,7 +93,7 @@ func _build() -> void:
 	_scrub.value_changed.connect(func(f):
 		_t = f * maxf(model.duration_sec, 0.0001)
 		if not _applying_remote and _link != null:
-			_link.send(_t, _playing))
+			_link.send(_t, _playing, "seek"))
 	tr.add_child(_scrub)
 	_time = Label.new()
 	_time.text = "0:00 / " + _fmt_time(model.duration_sec)
@@ -121,14 +121,15 @@ func _on_changed() -> void:
 	_save_timer.start()
 	_mod = load("res://core/modulation.gd").from_config(current_scene()["modulators"])
 
-func _on_remote_transport(t: float, playing: bool) -> void:
+func _on_remote_transport(t: float, playing: bool, kind: String) -> void:
 	_applying_remote = true
 	_t = t
 	if _scrub != null:
 		_scrub.set_value_no_signal(t / maxf(model.duration_sec, 0.0001))
-	_playing = playing
-	if _play != null:
-		_play.set_pressed_no_signal(playing)
+	if kind == "toggle":  # scrubs/ticks move the playhead only; play/pause set only on toggle
+		_playing = playing
+		if _play != null:
+			_play.set_pressed_no_signal(playing)
 	_applying_remote = false
 
 func _process(delta: float) -> void:

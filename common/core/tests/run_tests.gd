@@ -623,10 +623,11 @@ func test_supernova_odyssey_is_modulation_native() -> void:
 const TransportLink = preload("res://core/transport_link.gd")
 
 func test_transport_encode_decode_roundtrip() -> void:
-	var d = TransportLink.decode(TransportLink.encode(137.5, true))
+	var d = TransportLink.decode(TransportLink.encode(137.5, true, "seek"))
 	check(d != null, "decodes")
 	check_eq(d["t"], 137.5, "t roundtrips")
 	check_eq(d["playing"], true, "playing roundtrips")
+	check_eq(d["kind"], "seek", "kind roundtrips")
 	check_eq(TransportLink.decode("garbage".to_utf8_buffer()), null, "bad bytes -> null")
 
 func test_transport_ports_for_roles_are_mirrored() -> void:

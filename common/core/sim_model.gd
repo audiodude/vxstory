@@ -94,13 +94,16 @@ func _unhandled_key_input(ev: InputEvent) -> void:
 	if ev is InputEventKey and ev.keycode == KEY_SPACE and ev.pressed and not ev.echo:
 		_set_paused(not _paused)
 		if _link != null and not _applying_remote:
-			_link.send(mod_stack.t if mod_stack != null else 0.0, not _paused)
+			_link.send(mod_stack.t if mod_stack != null else 0.0, not _paused, "toggle")
 
-func _on_remote_transport(t: float, playing: bool) -> void:
+func _on_remote_transport(t: float, playing: bool, kind: String) -> void:
+	if kind == "tick":
+		return  # preview is the clock master; it doesn't follow ticks
 	_applying_remote = true
 	if mod_stack != null and absf(mod_stack.t - t) > 0.01:
 		scrub_to(t)
-	_set_paused(not playing)
+	if kind == "toggle":
+		_set_paused(not playing)  # scrubs (kind "seek") never change play/pause
 	_applying_remote = false
 
 func _attach_scene_tools() -> void:
@@ -152,7 +155,7 @@ func scrub_to(t: float) -> void:
 	restart()
 	_on_scrub(t)
 	if _link != null and not _applying_remote:
-		_link.send(mod_stack.t if mod_stack != null else t, not _paused)
+		_link.send(mod_stack.t if mod_stack != null else t, not _paused, "seek")
 
 func _on_scrub(_t: float) -> void:
 	# Models with their own sim clock override this to set it to t.
@@ -183,6 +186,8 @@ func _process(delta: float) -> void:
 		mod_stack.tick(delta)
 		_compose()
 		apply_live(params)
+		if _link != null and not _paused:
+			_link.send(mod_stack.t, true, "tick")  # broadcast the live clock so the Designer stays locked
 	if movie_mode:
 		_elapsed += delta
 		if _elapsed >= duration_sec:
