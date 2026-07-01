@@ -617,3 +617,20 @@ func test_supernova_odyssey_is_modulation_native() -> void:
 	check(not d.has("director"), "odyssey has no director block")
 	check(d.has("modulators"), "odyssey has modulators")
 	check_eq(d["modulators"]["lfo"].size(), 3, "odyssey has 3 macro-drift LFOs")
+
+# ---------------- transport link ----------------
+
+const TransportLink = preload("res://core/transport_link.gd")
+
+func test_transport_encode_decode_roundtrip() -> void:
+	var d = TransportLink.decode(TransportLink.encode(137.5, true))
+	check(d != null, "decodes")
+	check_eq(d["t"], 137.5, "t roundtrips")
+	check_eq(d["playing"], true, "playing roundtrips")
+	check_eq(TransportLink.decode("garbage".to_utf8_buffer()), null, "bad bytes -> null")
+
+func test_transport_ports_for_roles_are_mirrored() -> void:
+	var d = TransportLink.ports_for("designer")
+	var p = TransportLink.ports_for("preview")
+	check_eq(d["listen"], p["send"], "designer listens where preview sends")
+	check_eq(d["send"], p["listen"], "designer sends where preview listens")
