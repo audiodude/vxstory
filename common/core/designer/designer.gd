@@ -18,6 +18,9 @@ var _mod
 var _t := 0.0
 var _playing := false
 var _scrub: HSlider
+var _play: Button
+var _link
+var _applying_remote := false
 var _macro_knobs := {}  # name -> Knob   (populated from BasesPanel)
 var _outer: MarginContainer
 var _time: Label
@@ -39,6 +42,10 @@ func setup(p_model) -> void:
 	_save_timer.timeout.connect(save_now)
 	add_child(_save_timer)
 	_build()
+	_link = load("res://core/transport_link.gd").new()
+	add_child(_link)
+	_link.setup("designer")
+	_link.remote.connect(_on_remote_transport)
 	if vp != null:
 		vp.size_changed.connect(_update_cap)
 	_update_cap()
@@ -69,18 +76,24 @@ func _build() -> void:
 	_macro_knobs = _bases.macro_knobs()
 	var tr := HBoxContainer.new()
 	tr.add_theme_constant_override("separation", 12)
-	var play := Button.new()
-	play.text = "▶"
-	play.toggle_mode = true
-	play.toggled.connect(func(on): _playing = on)
-	tr.add_child(play)
+	_play = Button.new()
+	_play.text = "▶"
+	_play.toggle_mode = true
+	_play.toggled.connect(func(on):
+		_playing = on
+		if not _applying_remote and _link != null:
+			_link.send(_t, _playing))
+	tr.add_child(_play)
 	_scrub = HSlider.new()
 	_scrub.min_value = 0.0
 	_scrub.max_value = 1.0
 	_scrub.step = 0.001
 	_scrub.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_scrub.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	_scrub.value_changed.connect(func(f): _t = f * maxf(model.duration_sec, 0.0001))
+	_scrub.value_changed.connect(func(f):
+		_t = f * maxf(model.duration_sec, 0.0001)
+		if not _applying_remote and _link != null:
+			_link.send(_t, _playing))
 	tr.add_child(_scrub)
 	_time = Label.new()
 	_time.text = "0:00 / " + _fmt_time(model.duration_sec)
@@ -107,6 +120,16 @@ func _build() -> void:
 func _on_changed() -> void:
 	_save_timer.start()
 	_mod = load("res://core/modulation.gd").from_config(current_scene()["modulators"])
+
+func _on_remote_transport(t: float, playing: bool) -> void:
+	_applying_remote = true
+	_t = t
+	if _scrub != null:
+		_scrub.set_value_no_signal(t / maxf(model.duration_sec, 0.0001))
+	_playing = playing
+	if _play != null:
+		_play.set_pressed_no_signal(playing)
+	_applying_remote = false
 
 func _process(delta: float) -> void:
 	if _mod == null or not _mod.enabled:
