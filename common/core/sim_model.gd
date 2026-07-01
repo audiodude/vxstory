@@ -22,6 +22,9 @@ var modulators_cfg: Dictionary = {}
 var movie_mode: bool = false
 var _elapsed: float = 0.0
 var preset_path: String = ""
+var _link  # TransportLink (preview-only, null in movie/designer mode)
+var _paused := false
+var _applying_remote := false
 
 func model_name() -> String:
 	return "base"
@@ -60,6 +63,7 @@ func _ready() -> void:
 	if not movie_mode:
 		_attach_panel()
 		_attach_scene_tools()
+		_attach_link()
 
 func _attach_designer() -> void:
 	var Designer = load("res://core/designer/designer.gd")
@@ -73,6 +77,31 @@ func _attach_panel() -> void:
 	var TweakPanel = load("res://core/tweak_panel.gd")
 	if TweakPanel != null:
 		add_child(TweakPanel.new(self))
+
+func _attach_link() -> void:
+	_link = load("res://core/transport_link.gd").new()
+	add_child(_link)
+	_link.setup("preview")
+	_link.remote.connect(_on_remote_transport)
+
+func _set_paused(p: bool) -> void:
+	_paused = p
+	Engine.time_scale = 0.0 if p else 1.0
+
+func _unhandled_key_input(ev: InputEvent) -> void:
+	if movie_mode:
+		return
+	if ev is InputEventKey and ev.keycode == KEY_SPACE and ev.pressed and not ev.echo:
+		_set_paused(not _paused)
+		if _link != null and not _applying_remote:
+			_link.send(mod_stack.t if mod_stack != null else 0.0, not _paused)
+
+func _on_remote_transport(t: float, playing: bool) -> void:
+	_applying_remote = true
+	if mod_stack != null and absf(mod_stack.t - t) > 0.01:
+		scrub_to(t)
+	_set_paused(not playing)
+	_applying_remote = false
 
 func _attach_scene_tools() -> void:
 	# Timeline is a CanvasLayer, so it survives restart()'s "free non-CanvasLayer
@@ -122,6 +151,8 @@ func scrub_to(t: float) -> void:
 	_compose()
 	restart()
 	_on_scrub(t)
+	if _link != null and not _applying_remote:
+		_link.send(mod_stack.t if mod_stack != null else t, not _paused)
 
 func _on_scrub(_t: float) -> void:
 	# Models with their own sim clock override this to set it to t.

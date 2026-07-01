@@ -113,6 +113,9 @@ func _draw_strip() -> void:
 	_strip.draw_line(Vector2(px, 0), Vector2(px, h), Color(1, 1, 1, 0.9), 2.0)
 	var tt := int(model.mod_stack.t)
 	_strip.draw_string(font, Vector2(clampf(px + 5.0, 0.0, w - 56.0), 16), "%d:%02d" % [tt / 60, tt % 60], HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color.WHITE)
+	# paused indicator
+	if Engine.time_scale == 0.0:
+		_strip.draw_string(font, Vector2(w - 40.0, 16), "|| PAUSED", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(1.0, 0.85, 0.2))
 
 func _on_strip_input(ev: InputEvent) -> void:
 	if ev is InputEventMouseButton and ev.button_index == MOUSE_BUTTON_LEFT and ev.pressed:
