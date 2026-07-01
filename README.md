@@ -33,6 +33,9 @@ the in-app alternative — it opens a file dialog over the model's `presets/` di
     scripts/render.sh <model> <preset> [duration_sec]
     # e.g. scripts/render.sh radial_burst cataclysm 30
 
+    scripts/render-batch.sh [duration_sec] [model:preset ...]
+    # no preset args = the long-form set (one per model); e.g. render-batch.sh 60 for quick proofs
+
 Output: `renders/<model>_<preset>.mp4` (1920×1080 @ 60fps). Uses Godot Movie Maker
 mode — renders every frame at exactly 60fps, never drops. Requires a display
 (X11/Wayland); `xvfb-run` can be used if headless GPU is needed.
