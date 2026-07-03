@@ -46,6 +46,8 @@ func setup(p_model) -> void:
 	add_child(_link)
 	_link.setup("designer")
 	_link.remote.connect(_on_remote_transport)
+	# ask the peer (if already open) for its transport, so this window snaps to it on open
+	_link.send(_t, _playing, "hello")
 	if vp != null:
 		vp.size_changed.connect(_update_cap)
 	_update_cap()
@@ -122,6 +124,11 @@ func _on_changed() -> void:
 	_mod = load("res://core/modulation.gd").from_config(current_scene()["modulators"])
 
 func _on_remote_transport(t: float, playing: bool, kind: String) -> void:
+	if kind == "hello":
+		# a newly-opened peer wants state; reply with ours so it snaps to us
+		if _link != null:
+			_link.send(_t, _playing, "toggle")
+		return
 	_applying_remote = true
 	_t = t
 	if _scrub != null:

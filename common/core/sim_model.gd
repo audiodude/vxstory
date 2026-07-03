@@ -83,6 +83,8 @@ func _attach_link() -> void:
 	add_child(_link)
 	_link.setup("preview")
 	_link.remote.connect(_on_remote_transport)
+	# ask the peer (if already open) for its transport, so this window snaps to it on open
+	_link.send(mod_stack.t if mod_stack != null else 0.0, not _paused, "hello")
 
 func _set_paused(p: bool) -> void:
 	_paused = p
@@ -97,6 +99,11 @@ func _unhandled_key_input(ev: InputEvent) -> void:
 			_link.send(mod_stack.t if mod_stack != null else 0.0, not _paused, "toggle")
 
 func _on_remote_transport(t: float, playing: bool, kind: String) -> void:
+	if kind == "hello":
+		# a newly-opened peer wants state; reply with ours so it snaps to us
+		if _link != null:
+			_link.send(mod_stack.t if mod_stack != null else 0.0, not _paused, "toggle")
+		return
 	if kind == "tick":
 		return  # preview is the clock master; it doesn't follow ticks
 	_applying_remote = true
