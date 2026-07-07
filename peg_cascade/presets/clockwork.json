@@ -2,18 +2,22 @@
   "model": "peg_cascade",
   "seed": 1337,
   "duration_sec": 300.0,
-  "macros": {"complexity": 0.4, "ball_rate": 0.3, "bounciness": 0.5, "fx": 0.3},
-  "overrides": {},
+  "macros": {"complexity": 0.45, "ball_rate": 0.3, "bounciness": 0.5, "fx": 0.3},
+  "overrides": {"aim_bias": 0.35, "volley_spread": 0.5},
   "jitter": {},
   "modulators": {
     "tween": [
+      {"name": "era_walk", "secs": 290.0, "curve": "linear", "from": 0.0, "to": 1.0,
+       "targets": [{"to": "pattern_phase", "amount": 3.0}]},
       {"name": "build", "secs": 275.0, "curve": "ease_in", "from": 0.0, "to": 1.0,
-       "targets": [{"to": "ball_rate", "amount": 0.5}, {"to": "fx", "amount": 0.5}]}
+       "targets": [{"to": "ball_rate", "amount": 0.45}, {"to": "fx", "amount": 0.5}, {"to": "volley_count", "amount": 3.0}]},
+      {"name": "color_voyage", "secs": 300.0, "curve": "linear", "from": 0.0, "to": 1.0,
+       "targets": [{"to": "hue_drift", "amount": 0.35}]}
     ],
     "lfo": [
-      {"name": "texture", "oscillators": [
-        {"shape": "sine", "period_sec": 45.0, "phase_deg": 0.0, "amount": 1.0}],
-       "targets": [{"to": "complexity", "amount": 0.2}]}
+      {"name": "drop_drift", "oscillators": [
+        {"shape": "sine", "period_sec": 37.5, "phase_deg": 0.0, "amount": 1.0}],
+       "targets": [{"to": "drop_x", "amount": 0.45}]}
     ],
     "envelope": [
       {"name": "burst_fx", "event": "chain", "attack": 0.03, "decay": 0.5, "peak": 1.0,

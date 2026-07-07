@@ -3,6 +3,6 @@
   "seed": 32,
   "duration_sec": 30.0,
   "macros": {"complexity": 0.9, "ball_rate": 0.95, "bounciness": 0.9, "fx": 0.95},
-  "overrides": {"layout": "mixed", "palette": "neon"},
+  "overrides": {"palette": "neon"},
   "jitter": {"spinner_speed": {"pct": 30.0}}
 }

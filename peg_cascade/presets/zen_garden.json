@@ -3,6 +3,6 @@
   "seed": 31,
   "duration_sec": 30.0,
   "macros": {"complexity": 0.3, "ball_rate": 0.25, "bounciness": 0.5, "fx": 0.4},
-  "overrides": {"layout": "rings", "palette": "mono"},
+  "overrides": {"palette": "mono", "pattern_phase": 1.0},
   "jitter": {}
 }
