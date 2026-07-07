@@ -313,6 +313,9 @@ func _check_chain(at: Vector2) -> void:
 func on_chain_blast(_at: Vector2) -> void:
 	pass  # hook for hybrids
 
+func _on_scrub(t: float) -> void:
+	sim_t = t  # keep the launch-sweep phase continuous across Designer scrubs
+
 func _apply_hue(drift: float) -> void:
 	# Rotate the working palette's hues in place (turns of the wheel); pegs
 	# and balls hold `pal` by reference so they just need a redraw.
