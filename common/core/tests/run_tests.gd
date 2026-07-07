@@ -635,3 +635,42 @@ func test_transport_ports_for_roles_are_mirrored() -> void:
 	var p = TransportLink.ports_for("preview")
 	check_eq(d["listen"], p["send"], "designer listens where preview sends")
 	check_eq(d["send"], p["listen"], "designer sends where preview listens")
+
+# ---------------- peg_cascade patterns ----------------
+# These load the model-local patterns.gd; they self-skip when the suite runs
+# under a model that doesn't have it (only peg_cascade does).
+
+func test_peg_patterns_exact_counts() -> void:
+	if not ResourceLoader.exists("res://patterns.gd"):
+		return
+	var P = load("res://patterns.gd")
+	for n in [20, 47, 110, 200, 240]:
+		for pat in 3:
+			check_eq(P.positions(pat, n).size(), n, "pattern %d must return exactly %d positions" % [pat, n])
+
+func test_peg_patterns_bounds() -> void:
+	if not ResourceLoader.exists("res://patterns.gd"):
+		return
+	var P = load("res://patterns.gd")
+	for pat in 3:
+		for p in P.positions(pat, 150):
+			check(p.x >= 140.0 and p.x <= 1780.0 and p.y >= 180.0 and p.y <= 1050.0,
+				"pattern %d peg %s out of bounds" % [pat, str(p)])
+
+func test_peg_patterns_sorted_by_angle() -> void:
+	if not ResourceLoader.exists("res://patterns.gd"):
+		return
+	var P = load("res://patterns.gd")
+	var c := Vector2(960, 620)
+	for pat in 3:
+		var pts: PackedVector2Array = P.positions(pat, 120)
+		for i in pts.size() - 1:
+			check((pts[i] - c).angle() <= (pts[i + 1] - c).angle() + 0.0001,
+				"pattern %d must be angle-sorted at index %d" % [pat, i])
+
+func test_peg_patterns_deterministic_and_wrapping() -> void:
+	if not ResourceLoader.exists("res://patterns.gd"):
+		return
+	var P = load("res://patterns.gd")
+	check(P.positions(0, 90) == P.positions(3, 90), "pattern index must wrap mod 3")
+	check(P.positions(1, 90) == P.positions(1, 90), "generators must be deterministic")
