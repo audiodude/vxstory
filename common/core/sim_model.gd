@@ -23,6 +23,7 @@ var movie_mode: bool = false
 var _elapsed: float = 0.0
 var preset_path: String = ""
 var _link  # TransportLink (preview-only, null in movie/designer mode)
+var _tl  # Timeline CanvasLayer; shelters restart-surviving helpers (watcher, link)
 var _paused := false
 var _applying_remote := false
 
@@ -80,7 +81,13 @@ func _attach_panel() -> void:
 
 func _attach_link() -> void:
 	_link = load("res://core/transport_link.gd").new()
-	add_child(_link)
+	# Parent under the Timeline CanvasLayer (like the scene watcher): models'
+	# restart() sweeps queue_free every non-CanvasLayer child of the model, and
+	# a direct-child link dies silently on the first scrub/hot-reload.
+	if _tl != null:
+		_tl.add_child(_link)
+	else:
+		add_child(_link)
 	_link.setup("preview")
 	_link.remote.connect(_on_remote_transport)
 	# ask the peer (if already open) for its transport, so this window snaps to it on open
@@ -118,11 +125,11 @@ func _attach_scene_tools() -> void:
 	# children" sweep. Parent the watcher (a plain Node) UNDER it so the sweep
 	# can't free the watcher and silently kill hot-reload on the first restart/scrub.
 	var Timeline = load("res://core/timeline.gd")
-	var tl = Timeline.new(self)
-	add_child(tl)
+	_tl = Timeline.new(self)
+	add_child(_tl)
 	var Watcher = load("res://core/scene_watcher.gd")
 	var w = Watcher.new()
-	tl.add_child(w)
+	_tl.add_child(w)
 	w.setup(self, preset_path)
 
 func adopt_preset(p: Dictionary) -> void:
