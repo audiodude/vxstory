@@ -1,27 +1,102 @@
 {
-  "model": "peg_cascade",
-  "seed": 1337,
   "duration_sec": 300.0,
-  "macros": {"complexity": 0.45, "ball_rate": 0.3, "bounciness": 0.5, "fx": 0.3},
-  "overrides": {"aim_bias": 0.35, "volley_spread": 0.5},
   "jitter": {},
+  "macros": {
+    "ball_rate": 0.3,
+    "bounciness": 0.5,
+    "complexity": 0.45,
+    "fx": 0.3
+  },
+  "model": "peg_cascade",
   "modulators": {
-    "tween": [
-      {"name": "era_walk", "secs": 290.0, "curve": "linear", "from": 0.0, "to": 1.0,
-       "targets": [{"to": "pattern_phase", "amount": 3.0}]},
-      {"name": "build", "secs": 275.0, "curve": "ease_in", "from": 0.0, "to": 1.0,
-       "targets": [{"to": "ball_rate", "amount": 0.45}, {"to": "fx", "amount": 0.5}, {"to": "volley_count", "amount": 3.0}]},
-      {"name": "color_voyage", "secs": 300.0, "curve": "linear", "from": 0.0, "to": 1.0,
-       "targets": [{"to": "hue_drift", "amount": 0.35}]}
+    "envelope": [
+      {
+        "attack": 0.03,
+        "decay": 0.5,
+        "event": "chain",
+        "name": "burst_fx",
+        "peak": 1.0,
+        "targets": [
+          {
+            "amount": 0.3,
+            "to": "fx"
+          }
+        ]
+      }
     ],
     "lfo": [
-      {"name": "drop_drift", "oscillators": [
-        {"shape": "sine", "period_sec": 37.5, "phase_deg": 0.0, "amount": 1.0}],
-       "targets": [{"to": "drop_x", "amount": 0.45}]}
+      {
+        "name": "drop_drift",
+        "oscillators": [
+          {
+            "amount": 1.0,
+            "period_sec": 37.5,
+            "phase_deg": 0.0,
+            "shape": "sine"
+          }
+        ],
+        "targets": [
+          {
+            "amount": 0.45,
+            "to": "drop_x"
+          }
+        ]
+      }
     ],
-    "envelope": [
-      {"name": "burst_fx", "event": "chain", "attack": 0.03, "decay": 0.5, "peak": 1.0,
-       "targets": [{"to": "fx", "amount": 0.3}]}
+    "tween": [
+      {
+        "curve": "linear",
+        "from": 0.0,
+        "name": "era_walk",
+        "secs": 243.595,
+        "targets": [
+          {
+            "amount": 3.0,
+            "to": "pattern_phase"
+          }
+        ],
+        "to": 1.0
+      },
+      {
+        "curve": "ease_in",
+        "from": 0.0,
+        "name": "build",
+        "secs": 275.0,
+        "targets": [
+          {
+            "amount": 0.45,
+            "to": "ball_rate"
+          },
+          {
+            "amount": 0.5,
+            "to": "fx"
+          },
+          {
+            "amount": 3.0,
+            "to": "volley_count"
+          }
+        ],
+        "to": 1.0
+      },
+      {
+        "curve": "linear",
+        "from": 0.0,
+        "name": "color_voyage",
+        "secs": 300.0,
+        "targets": [
+          {
+            "amount": 0.35,
+            "to": "hue_drift"
+          }
+        ],
+        "to": 1.0
+      }
     ]
-  }
+  },
+  "overrides": {
+    "aim_bias": 0.35,
+    "spinner_count": 0.0,
+    "volley_spread": 0.5
+  },
+  "seed": 1337
 }
