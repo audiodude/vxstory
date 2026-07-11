@@ -49,7 +49,7 @@ Low-level knobs (pin exact values via a preset's `overrides`). Parameters marked
 
 ### Look
 
-- **hue_drift** (`float`, 0.0–1.0, default `0.0`) — rotates the whole palette around the hue wheel (in turns). Tween it slowly for a colour arc across the piece.
+- **hue_drift** (`float`, 0.0–90.0, default `0.0`) — palette hue rotation in degrees per minute, integrated over the run (same convention as `radial_burst` / `supernova_orbit`). ~25°/min drifts the palette a third of the wheel across a 5-minute piece.
 - **glow** (`float`, 0.0–3.0, default `1.3`) — additive glow intensity.
 - **palette** (`enum`, default `"classic"`) *(restart)* — base colour scheme: `classic` (blue/orange/white), `neon` (pink/cyan/chartreuse), `mono` (greys — note hue_drift has no visible effect on pure greys).
 

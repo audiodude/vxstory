@@ -1,6 +1,7 @@
 extends "res://core/sim_model.gd"
 
 const PS = preload("res://core/param_schema.gd")
+const Hue = preload("res://core/hue.gd")
 const Patterns = preload("res://patterns.gd")
 
 const PALETTES := {
@@ -106,7 +107,7 @@ func get_schema() -> Dictionary:
 			PS.f("respawn_period", 8.0, 2.0, 20.0),
 			PS.i("max_balls", 28, 4, 80),
 			PS.f("hot_fraction", 0.25, 0.0, 1.0, {"live": false}),
-			PS.f("hue_drift", 0.0, 0.0, 1.0),
+			PS.f("hue_drift", 0.0, 0.0, 90.0),
 			PS.f("glow", 1.3, 0.0, 3.0),
 			PS.e("palette", "classic", PackedStringArray(["classic", "neon", "mono"]), {"live": false}),
 		],
@@ -132,7 +133,7 @@ func restart() -> void:
 	base_pal = PALETTES[params["palette"]]
 	pal = base_pal.duplicate()
 	last_hue = 0.0
-	_apply_hue(params["hue_drift"])
+	_apply_hue()
 	phys_mat = PhysicsMaterial.new()
 	phys_mat.bounce = params["bounce"]
 	phys_mat.friction = 0.15
@@ -316,15 +317,16 @@ func on_chain_blast(_at: Vector2) -> void:
 func _on_scrub(t: float) -> void:
 	sim_t = t  # keep the launch-sweep phase continuous across Designer scrubs
 
-func _apply_hue(drift: float) -> void:
-	# Rotate the working palette's hues in place (turns of the wheel); pegs
-	# and balls hold `pal` by reference so they just need a redraw.
-	if absf(drift - last_hue) <= 0.0005:
+func _apply_hue() -> void:
+	# Rotate the working palette's hues in place; hue_drift is deg/min, integrated
+	# over sim_t (same convention as radial_burst / supernova_orbit). Pegs and balls
+	# hold `pal` by reference so they just need a redraw.
+	var deg: float = params["hue_drift"] * sim_t / 60.0
+	if absf(deg - last_hue) <= 0.1:
 		return
-	last_hue = drift
+	last_hue = deg
 	for key in base_pal:
-		var c: Color = base_pal[key]
-		pal[key] = Color.from_hsv(fposmod(c.h + drift, 1.0), c.s, c.v, c.a)
+		pal[key] = Hue.rotated(base_pal[key], deg)
 	for d in peg_defs:
 		if d["node"] != null and is_instance_valid(d["node"]):
 			d["node"].queue_redraw()
@@ -364,4 +366,4 @@ func apply_live(p: Dictionary) -> void:
 	if phys_mat != null:
 		phys_mat.bounce = p["bounce"]
 	if not base_pal.is_empty():
-		_apply_hue(p["hue_drift"])
+		_apply_hue()

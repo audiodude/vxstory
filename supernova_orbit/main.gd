@@ -1,6 +1,7 @@
 extends "res://core/sim_model.gd"
 
 const PS = preload("res://core/param_schema.gd")
+const Hue = preload("res://core/hue.gd")
 const FluidSim = preload("res://fluid_sim/fluid_sim.gd")
 const CORE_SHADER := preload("res://core.gdshader")
 const CENTER := Vector2(960, 540)
@@ -91,10 +92,7 @@ func get_schema() -> Dictionary:
 	}
 
 func _hue_rotated(c: Color) -> Color:
-	var deg: float = params["hue_drift"] * sim_t / 60.0
-	var shift := fposmod(deg, 360.0) / 360.0
-	var h := fposmod(c.h + shift, 1.0)
-	return Color.from_hsv(h, c.s, c.v, c.a)
+	return Hue.rotated(c, params["hue_drift"] * sim_t / 60.0)
 
 func _spawn_core(p: Vector2, v: Vector2, m: float) -> Dictionary:
 	var mat := ShaderMaterial.new()

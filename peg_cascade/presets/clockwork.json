@@ -77,24 +77,12 @@
           }
         ],
         "to": 1.0
-      },
-      {
-        "curve": "linear",
-        "from": 0.0,
-        "name": "color_voyage",
-        "secs": 300.0,
-        "targets": [
-          {
-            "amount": 0.35,
-            "to": "hue_drift"
-          }
-        ],
-        "to": 1.0
       }
     ]
   },
   "overrides": {
     "aim_bias": 0.35,
+    "hue_drift": 25.0,
     "spinner_count": 0.0,
     "volley_spread": 0.5
   },
