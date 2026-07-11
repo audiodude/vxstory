@@ -169,9 +169,9 @@ button. Descriptions below are from their actual renders.
 
 ## Tests
 
-    godot --headless --path radial_burst --script res://core/tests/run_tests.gd
+    godot --headless --path peg_cascade --script res://core/tests/run_tests.gd
 
-Expected: `TESTS: 63 run, 0 failed`
+Expected: `TESTS: 67 run, 0 failed, 0 skipped`
 
 ## Layout
 

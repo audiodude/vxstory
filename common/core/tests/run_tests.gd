@@ -1,10 +1,11 @@
 extends SceneTree
 # Minimal assert-based test runner. Run with:
-#   godot --headless --path radial_burst --script res://core/tests/run_tests.gd
+#   godot --headless --path peg_cascade --script res://core/tests/run_tests.gd
 # Add new `func test_*() -> void` methods; they are discovered by name.
 
 var _fails: int = 0
 var _count: int = 0
+var _skips: int = 0
 
 func _initialize() -> void:
 	for m in get_method_list():
@@ -12,7 +13,7 @@ func _initialize() -> void:
 		if n.begins_with("test_"):
 			_count += 1
 			call(n)
-	print("TESTS: %d run, %d failed" % [_count, _fails])
+	print("TESTS: %d run, %d failed, %d skipped" % [_count, _fails, _skips])
 	quit(1 if _fails > 0 else 0)
 
 func check(cond: bool, msg: String) -> void:
@@ -22,6 +23,10 @@ func check(cond: bool, msg: String) -> void:
 
 func check_eq(a, b, msg: String) -> void:
 	check(is_same_ish(a, b), msg + " (got %s, want %s)" % [str(a), str(b)])
+
+func skip(reason: String) -> void:
+	_skips += 1
+	print("SKIP: " + reason)
 
 func is_same_ish(a, b) -> bool:
 	if (a is float or a is int) and (b is float or b is int):
@@ -409,7 +414,7 @@ func test_reload_from_file_adopts_new_scene() -> void:
 	get_root().add_child(m)
 	var path := "/tmp/vx_reload.json"
 	var fa := FileAccess.open(path, FileAccess.WRITE)
-	fa.store_string(JSON.stringify({"model": "radial_burst", "seed": 777, "duration_sec": 42.0}))
+	fa.store_string(JSON.stringify({"model": m.model_name(), "seed": 777, "duration_sec": 42.0}))
 	fa.close()
 	m.preset_path = path
 	m.reload_from_file()
@@ -642,6 +647,7 @@ func test_transport_ports_for_roles_are_mirrored() -> void:
 
 func test_peg_patterns_exact_counts() -> void:
 	if not ResourceLoader.exists("res://patterns.gd"):
+		skip("peg patterns unavailable outside the peg_cascade project")
 		return
 	var P = load("res://patterns.gd")
 	for n in [20, 47, 110, 200, 240]:
@@ -650,6 +656,7 @@ func test_peg_patterns_exact_counts() -> void:
 
 func test_peg_patterns_bounds() -> void:
 	if not ResourceLoader.exists("res://patterns.gd"):
+		skip("peg patterns unavailable outside the peg_cascade project")
 		return
 	var P = load("res://patterns.gd")
 	for pat in 3:
@@ -659,6 +666,7 @@ func test_peg_patterns_bounds() -> void:
 
 func test_peg_patterns_sorted_by_angle() -> void:
 	if not ResourceLoader.exists("res://patterns.gd"):
+		skip("peg patterns unavailable outside the peg_cascade project")
 		return
 	var P = load("res://patterns.gd")
 	var c := Vector2(960, 620)
@@ -670,6 +678,7 @@ func test_peg_patterns_sorted_by_angle() -> void:
 
 func test_peg_patterns_deterministic_and_wrapping() -> void:
 	if not ResourceLoader.exists("res://patterns.gd"):
+		skip("peg patterns unavailable outside the peg_cascade project")
 		return
 	var P = load("res://patterns.gd")
 	check(P.positions(0, 90) == P.positions(3, 90), "pattern index must wrap mod 3")
