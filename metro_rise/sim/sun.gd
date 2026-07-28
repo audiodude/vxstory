@@ -10,21 +10,21 @@ const PEAK_ELEV := 62.0
 const PALETTES := {
 	"daybreak": {
 		"sun_low": Color(1.0, 0.62, 0.32), "sun_high": Color(1.0, 0.96, 0.9),
-		"day_top": Color(0.22, 0.45, 0.82), "day_hor": Color(0.72, 0.82, 0.92),
+		"day_top": Color(0.12, 0.3, 0.66), "day_hor": Color(0.44, 0.58, 0.74),
 		"warm_hor": Color(1.0, 0.55, 0.3),
 		"night_top": Color(0.012, 0.018, 0.045), "night_hor": Color(0.05, 0.07, 0.13),
 		"interior_warm": Color(1.0, 0.82, 0.55), "interior_cool": Color(0.75, 0.85, 1.0),
 	},
 	"sodium": {
 		"sun_low": Color(1.0, 0.52, 0.18), "sun_high": Color(1.0, 0.9, 0.78),
-		"day_top": Color(0.3, 0.42, 0.62), "day_hor": Color(0.82, 0.78, 0.7),
+		"day_top": Color(0.2, 0.3, 0.5), "day_hor": Color(0.6, 0.55, 0.46),
 		"warm_hor": Color(1.0, 0.5, 0.2),
 		"night_top": Color(0.02, 0.015, 0.04), "night_hor": Color(0.12, 0.08, 0.06),
 		"interior_warm": Color(1.0, 0.72, 0.35), "interior_cool": Color(1.0, 0.85, 0.6),
 	},
 	"overcast": {
 		"sun_low": Color(0.85, 0.72, 0.62), "sun_high": Color(0.85, 0.88, 0.92),
-		"day_top": Color(0.45, 0.52, 0.6), "day_hor": Color(0.7, 0.74, 0.78),
+		"day_top": Color(0.3, 0.36, 0.44), "day_hor": Color(0.5, 0.54, 0.58),
 		"warm_hor": Color(0.85, 0.68, 0.55),
 		"night_top": Color(0.015, 0.02, 0.035), "night_hor": Color(0.06, 0.07, 0.1),
 		"interior_warm": Color(0.95, 0.85, 0.65), "interior_cool": Color(0.7, 0.82, 0.95),
@@ -51,11 +51,11 @@ static func eval(day: float, palette: String, params: Dictionary) -> Dictionary:
 	var ar := deg_to_rad(azim)
 	var sun_pos := Vector3(cos(er) * cos(ar), sin(er), cos(er) * sin(ar))
 
-	var sun_energy := smoothstep(-2.0, 10.0, elev) * (0.7 + 0.9 * clampf(elev / PEAK_ELEV, 0.0, 1.0))
+	var sun_energy := smoothstep(-2.0, 10.0, elev) * (0.8 + 1.2 * clampf(elev / PEAK_ELEV, 0.0, 1.0))
 	var sun_color: Color = pal["sun_low"].lerp(pal["sun_high"], clampf(elev / 35.0, 0.0, 1.0))
 
 	var fog: float = float(params.get("fog_amount", 0.35)) \
-			* (0.0008 + 0.0012 * hump + 0.0004 * night)
+			* (0.00022 + 0.00035 * hump + 0.00012 * night)
 
 	return {
 		"sun_dir": -sun_pos,               # direction light travels (scene-ward)
@@ -63,7 +63,7 @@ static func eval(day: float, palette: String, params: Dictionary) -> Dictionary:
 		"sun_energy": sun_energy, "sun_color": sun_color,
 		"moon_energy": 0.2 * night * night,
 		"night": night,
-		"ambient_energy": lerpf(1.0, 0.32, night),
+		"ambient_energy": lerpf(0.6, 0.3, night),
 		"fog_density": fog,
 		"star_alpha": clampf((night - 0.6) / 0.4, 0.0, 1.0),
 		"sky_top": (pal["day_top"] as Color).lerp(pal["night_top"], night),

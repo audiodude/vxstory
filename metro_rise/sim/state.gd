@@ -40,7 +40,7 @@ func _init(plan: Dictionary, params: Dictionary) -> void:
 					"ep_a": frac_done / 1.0, "ep_b": (frac_done + tf / total),
 					"top_tier": ti == e["tiers"].size() - 1,
 				})
-				_state.append({"active": false, "progress": 0.0, "demo": 0.0, "crane": false})
+				_state.append({"active": false, "progress": 0.0, "demo": 0.0, "crane": false, "ep": 0.0})
 				below += tf
 				frac_done += tf / total
 
@@ -53,10 +53,12 @@ func slot(i: int) -> Dictionary:
 	var e: Dictionary = s["entry"]
 	return {
 		"active": d["active"], "progress": d["progress"], "demo": d["demo"],
-		"crane": d["crane"], "rect": s["tier_rect"], "y0": s["y0"], "h": s["h"],
+		"crane": d["crane"], "ep": d["ep"], "rect": s["tier_rect"], "y0": s["y0"], "h": s["h"],
 		"style": e["style"], "floors": e["floors"], "win_w": e["win_w"],
 		"accent": e["accent"], "lit_seed": e["lit_seed"], "lot": s["lot"],
-		"industrial": e["industrial"],
+		"industrial": e["industrial"], "bottom_tier": s["ep_a"] == 0.0,
+		"total_h": float(e["floors"]) * float(_params["floor_h"]),
+		"entry_rect": e["rect"],
 	}
 
 func eval(P: float) -> Dictionary:
@@ -82,7 +84,8 @@ func eval(P: float) -> Dictionary:
 
 		var st: Dictionary = _state[i]
 		if _first or st["active"] != active or absf(st["progress"] - tier_prog) > 0.0005 \
-				or absf(st["demo"] - dp) > 0.0005 or st["crane"] != crane:
+				or absf(st["demo"] - dp) > 0.0005 or st["crane"] != crane \
+				or absf(st["ep"] - ep) > 0.0005:
 			if _first:
 				if active:
 					changed.append(i)
@@ -92,6 +95,7 @@ func eval(P: float) -> Dictionary:
 			st["progress"] = tier_prog
 			st["demo"] = dp
 			st["crane"] = crane
+			st["ep"] = ep
 
 		# Entry-level event edges (once per entry, via its first tier slot).
 		if s["ep_a"] == 0.0:

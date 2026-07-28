@@ -55,12 +55,14 @@ void fragment() {
 	vec3 albedo = v_tint.rgb;
 	float rough = 0.9;
 	float metal = 0.0;
+	float spec = 0.12;   // matte walls; windows raise it below
 	vec3 emiss = vec3(0.0);
 
 	if (an.y > 0.9) {
 		// Roof: flat, darker, no windows. Under construction it reads as a slab.
 		albedo *= (progress < 0.999) ? 0.4 : 0.55;
 		rough = 0.95;
+		spec = 0.04;
 	} else {
 		// Face-space meters: u along the face, v = height above base.
 		float u_m = (an.x > an.z) ? (v_local.z * v_dims.z) : (v_local.x * v_dims.x);
@@ -75,7 +77,7 @@ void fragment() {
 
 		// Window mask per style.
 		float wr_u; float wr_v;              // window fraction of cell, u and v
-		if (style < 0.5) { wr_u = 0.5; wr_v = 0.55; }
+		if (style < 0.5) { wr_u = 0.45; wr_v = 0.52; }
 		else if (style < 1.5) { wr_u = 0.92; wr_v = 0.55; }
 		else { wr_u = 0.9; wr_v = 0.86; }
 		wr_u = mix(wr_u, 0.94, storefront);
@@ -112,10 +114,11 @@ void fragment() {
 			float style_bias = (style > 1.5) ? 1.15 : 1.0;
 			float lit = step(h_lit, lit_fraction * night * style_bias * mix(1.0, 1.5, storefront));
 			// Dark glazing by day; interior light at night.
-			vec3 glass_day = vec3(0.16, 0.19, 0.24) * mix(0.8, 1.2, hash12(cell_id * 1.3));
+			vec3 glass_day = vec3(0.09, 0.12, 0.17) * mix(0.8, 1.2, hash12(cell_id * 1.3));
 			albedo = mix(albedo, glass_day, (style > 1.5) ? 0.85 : 1.0);
 			rough = (style > 1.5) ? 0.12 : 0.25;
 			metal = (style > 1.5) ? 0.35 : 0.15;
+			spec = 0.5;
 			float temp = hash12(cell_id * 7.9 + 0.31);
 			vec3 interior = mix(interior_warm, interior_cool, step(0.62, temp));
 			emiss += interior * lit * (1.1 + 0.8 * hash12(cell_id * 5.1)) * night;
@@ -140,5 +143,6 @@ void fragment() {
 	ALBEDO = albedo;
 	ROUGHNESS = rough;
 	METALLIC = metal;
+	SPECULAR = spec;
 	EMISSION = emiss;
 }
