@@ -17,7 +17,7 @@ var tracker  # StateTracker
 var city_view  # CityView
 var world: Node3D
 var env: Environment
-var sky_mat: ProceduralSkyMaterial
+var sky_mat: ShaderMaterial
 var sun_light: DirectionalLight3D
 var moon_light: DirectionalLight3D
 var cam: Camera3D
@@ -91,7 +91,8 @@ func restart() -> void:
 	add_child(world)
 
 	env = Environment.new()
-	sky_mat = ProceduralSkyMaterial.new()
+	sky_mat = ShaderMaterial.new()
+	sky_mat.shader = preload("res://view/sky.gdshader")
 	env.background_mode = Environment.BG_SKY
 	env.sky = Sky.new()
 	env.sky.sky_material = sky_mat
@@ -174,11 +175,14 @@ func _apply_sky(s: Dictionary) -> void:
 	sun_light.light_energy = s["sun_energy"]
 	sun_light.light_color = s["sun_color"]
 	moon_light.light_energy = s["moon_energy"]
-	sky_mat.sky_top_color = s["sky_top"]
-	sky_mat.sky_horizon_color = s["sky_horizon"]
-	sky_mat.ground_bottom_color = Color(0.06, 0.055, 0.05)
-	sky_mat.ground_horizon_color = s["sky_horizon"]
+	sky_mat.set_shader_parameter("top_color", Vector3(s["sky_top"].r, s["sky_top"].g, s["sky_top"].b))
+	sky_mat.set_shader_parameter("horizon_color", Vector3(s["sky_horizon"].r, s["sky_horizon"].g, s["sky_horizon"].b))
+	sky_mat.set_shader_parameter("sun_color", Vector3(s["sun_color"].r, s["sun_color"].g, s["sun_color"].b))
+	sky_mat.set_shader_parameter("to_sun", -dir)
+	sky_mat.set_shader_parameter("sun_energy", s["sun_energy"])
+	sky_mat.set_shader_parameter("star_alpha", s["star_alpha"])
+	sky_mat.set_shader_parameter("star_density", params["star_density"])
 	env.ambient_light_energy = s["ambient_energy"]
 	env.fog_density = s["fog_density"]
 	env.fog_light_color = s["sky_horizon"]
-	env.glow_intensity = 0.8 * float(params["glow"])
+	env.glow_intensity = 0.9 * float(params["glow"])

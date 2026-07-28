@@ -19,6 +19,6 @@ void fragment() {
 	ALBEDO = vec3(0.08, 0.08, 0.09);
 	ROUGHNESS = 0.6;
 	METALLIC = 0.4;
-	float head = smoothstep(0.9, 0.96, v_h01);
-	EMISSION = vec3(1.0, 0.75, 0.45) * head * night * 3.5;
+	float head = smoothstep(0.86, 0.94, v_h01);
+	EMISSION = vec3(1.0, 0.75, 0.45) * head * night * 7.0;
 }

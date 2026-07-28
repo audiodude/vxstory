@@ -121,7 +121,7 @@ void fragment() {
 			spec = 0.5;
 			float temp = hash12(cell_id * 7.9 + 0.31);
 			vec3 interior = mix(interior_warm, interior_cool, step(0.62, temp));
-			emiss += interior * lit * (1.1 + 0.8 * hash12(cell_id * 5.1)) * night;
+			emiss += interior * lit * (1.5 + 1.0 * hash12(cell_id * 5.1)) * night;
 		}
 
 		// Storefront neon strip along the top of the ground floor.

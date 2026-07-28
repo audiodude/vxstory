@@ -76,8 +76,8 @@ func setup(plan: Dictionary, params: Dictionary, slot_count: int) -> void:
 	lamp_mat = ShaderMaterial.new()
 	lamp_mat.shader = LampShader
 	var pole := CylinderMesh.new()
-	pole.top_radius = 0.12
-	pole.bottom_radius = 0.18
+	pole.top_radius = 0.34
+	pole.bottom_radius = 0.16
 	pole.height = 1.0
 	pole.radial_segments = 5
 	lamps_mm = _pool(pole, lamp_mat, plan["lamps"].size(), false, true)

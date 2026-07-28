@@ -52,4 +52,8 @@ void fragment() {
 	ALBEDO = mix(dirt, surface, pave);
 	ROUGHNESS = mix(0.95, 0.9, pave);
 	SPECULAR = 0.02;   // no grazing sky-mirror on asphalt/dirt
+	// Markings keep a faint self-light after dusk so the grid stays legible.
+	if (kind < 1.5 && surface.r > 0.3) {
+		EMISSION = surface * night * pave * 0.3;
+	}
 }
