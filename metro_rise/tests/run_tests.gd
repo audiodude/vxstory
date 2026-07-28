@@ -41,3 +41,44 @@ func test_smoke_rng() -> void:
 	var a := RNGService.new(7).stream("plan")
 	var b := RNGService.new(7).stream("plan")
 	check_eq(a.randf(), b.randf(), "runner + core symlink alive")
+
+# ---------------- citygen/roads ----------------
+
+const Roads = preload("res://citygen/roads.gd")
+
+func _road_params() -> Dictionary:
+	return {"city_radius": 600.0, "block_min": 90.0, "block_max": 130.0,
+			"boulevard_count": 2}
+
+func test_roads_deterministic() -> void:
+	var a := Roads.build(RNGService.new(11).stream("roads"), _road_params())
+	var b := Roads.build(RNGService.new(11).stream("roads"), _road_params())
+	check_eq(a["segments"].size(), b["segments"].size(), "same seed same segment count")
+	check_eq(str(a["segments"][0]), str(b["segments"][0]), "same first segment")
+	var c := Roads.build(RNGService.new(12).stream("roads"), _road_params())
+	check(str(a["xs"]) != str(c["xs"]), "different seed different grid")
+
+func test_roads_rings_and_kinds() -> void:
+	var r := Roads.build(RNGService.new(3).stream("roads"), _road_params())
+	var blvds := 0
+	var diags := 0
+	for s in r["segments"]:
+		check(s["ring"] >= 0 and s["ring"] <= 5, "ring in range")
+		check(s["width"] > 0.0, "width set")
+		if s["kind"] == "blvd":
+			blvds += 1
+		if s["diag"]:
+			diags += 1
+	check(blvds > 0, "boulevards exist")
+	check(diags > 0, "diagonal boulevard segments exist")
+
+func test_roads_nodes_connect() -> void:
+	var r := Roads.build(RNGService.new(3).stream("roads"), _road_params())
+	for n in r["nodes"]:
+		check(n["segs"].size() >= 2, "every node joins >=2 segments")
+	for s in r["segments"]:
+		var na: Dictionary = r["nodes"][s["na"]]
+		var nb: Dictionary = r["nodes"][s["nb"]]
+		check_eq(str(na["pos"]), str(s["a"]), "segment a matches node na")
+		check_eq(str(nb["pos"]), str(s["b"]), "segment b matches node nb")
+		check(s["id"] in na["segs"] and s["id"] in nb["segs"], "node backrefs segment")
