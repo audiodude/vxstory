@@ -1,0 +1,16 @@
+{
+  "model": "metro_rise",
+  "seed": 9114,
+  "duration_sec": 30.0,
+  "macros": {
+    "development": 0.85,
+    "day_phase": 0.88,
+    "density": 0.9,
+    "verticality": 0.85,
+    "sprawl": 0.45,
+    "traffic": 0.85,
+    "nightlife": 0.9
+  },
+  "overrides": {"palette": "sodium"},
+  "jitter": {}
+}

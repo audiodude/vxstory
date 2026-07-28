@@ -1,6 +1,6 @@
 # vxstory
 
-Six parameterized physics/particle video models in Godot 4.6. No sound — pure visuals.
+Seven parameterized generative video models in Godot 4.6. No sound — pure visuals.
 
 | Model | What it is |
 |---|---|
@@ -10,6 +10,7 @@ Six parameterized physics/particle video models in Godot 4.6. No sound — pure 
 | `chromatic_cascade` | Peg physics driving a reactive ink/dye field |
 | `matter_cycle` | Polygons shatter to particles, swirl, re-condense — forever |
 | `supernova_orbit` | Accretion → critical mass → detonation cycle |
+| `metro_rise` | 3D era-city: dawn-to-night build-out, brick→concrete→glass, traffic + cranes |
 
 ## Preview / tune
 
@@ -167,6 +168,19 @@ button. Descriptions below are from their actual renders.
   cools through teal by the end. Three LFOs continuously drift accretion, chaos, and
   duality over incommensurate periods — no two minutes look the same.
 
+**metro_rise** (3D)
+- `default` — mid-build afternoon: cranes over rising mid-rises, traffic, district
+  contrast from downtown out to industrial fringe.
+- `boomtown` — dense vertical sodium dusk: era-3 glass skyline, heavy traffic,
+  neon-soaked storefronts.
+- `garden_city` — low-rise parks-heavy morning: loose grid, sparse traffic, long
+  soft shadows.
+- `century` — 5-minute long-form: the whole city rises from empty dawn land to a lit
+  night metropolis across one sun arc — brick → concrete → glass with demolition and
+  replacement, traffic ramping in mid-era, envelopes pipping glow on tower topouts.
+  The structural state is a pure function of the `development` dial, so the Designer
+  scrubs the entire build-out exactly.
+
 ## Tests
 
     godot --headless --path peg_cascade --script res://core/tests/run_tests.gd
@@ -190,6 +204,9 @@ vxstory/
     presets/
       default.json
       <variant>.json
+  metro_rise/      # additionally: citygen/ + sim/ (pure logic, headless-tested
+                   # via tests/run_tests.gd), view/ (MultiMesh pools + shaders);
+                   # the 3D world hangs under the Node2D root
   scripts/
     render.sh      # render.sh <model> <preset> [duration] -> renders/<model>_<preset>.mp4
   renders/         # output mp4s (gitignored)

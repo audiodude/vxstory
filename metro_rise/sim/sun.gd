@@ -61,9 +61,9 @@ static func eval(day: float, palette: String, params: Dictionary) -> Dictionary:
 		"sun_dir": -sun_pos,               # direction light travels (scene-ward)
 		"elev_deg": elev, "azim_deg": azim,
 		"sun_energy": sun_energy, "sun_color": sun_color,
-		"moon_energy": 0.45 * night * night,
+		"moon_energy": 0.3 * night * night,
 		"night": night,
-		"ambient_energy": lerpf(0.6, 0.3, night),
+		"ambient_energy": lerpf(0.6, 0.24, night),
 		"fog_density": fog,
 		"star_alpha": clampf((night - 0.6) / 0.4, 0.0, 1.0),
 		"sky_top": (pal["day_top"] as Color).lerp(pal["night_top"], night),

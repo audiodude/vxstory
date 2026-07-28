@@ -1,0 +1,38 @@
+{
+  "model": "metro_rise",
+  "seed": 4207,
+  "duration_sec": 300.0,
+  "macros": {
+    "development": 0.0,
+    "day_phase": 0.0,
+    "density": 0.55,
+    "verticality": 0.6,
+    "sprawl": 0.55,
+    "traffic": 0.0,
+    "nightlife": 0.35
+  },
+  "overrides": {},
+  "jitter": {},
+  "modulators": {
+    "tween": [
+      {"name": "build", "secs": 290.0, "curve": "smooth", "from": 0.02, "to": 1.0,
+       "targets": [{"to": "development", "amount": 1.0}]},
+      {"name": "sunarc", "secs": 300.0, "curve": "linear", "from": 0.03, "to": 0.98,
+       "targets": [{"to": "day_phase", "amount": 1.0}]},
+      {"name": "rush", "secs": 280.0, "curve": "linear", "from": -0.25, "to": 1.0,
+       "targets": [{"to": "traffic", "amount": 0.75}]},
+      {"name": "lights_on", "secs": 300.0, "curve": "ease_in", "from": 0.0, "to": 0.35,
+       "targets": [{"to": "nightlife", "amount": 1.0}]}
+    ],
+    "lfo": [
+      {"name": "breath", "oscillators": [{"shape": "sine", "period_sec": 45.0, "phase_deg": 0.0, "amount": 1.0}],
+       "targets": [{"to": "cam_pull", "amount": 0.04}]}
+    ],
+    "envelope": [
+      {"name": "pip", "event": "topout", "attack": 0.06, "decay": 0.9, "peak": 1.0,
+       "targets": [{"to": "glow", "amount": 0.35}]},
+      {"name": "epoch", "event": "era", "attack": 0.5, "decay": 4.0, "peak": 1.0,
+       "targets": [{"to": "fog_amount", "amount": 0.3}]}
+    ]
+  }
+}
