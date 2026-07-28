@@ -221,3 +221,77 @@ func test_parcels_demolish_together() -> void:
 				found = true
 				check(demo_ps.size() <= 1, "parcel members share one demo P")
 	check(found, "at least one parcel tower across seeds")
+
+# ---------------- sim/state ----------------
+
+const State = preload("res://sim/state.gd")
+
+func test_state_scrub_exact() -> void:
+	var plan := Plan.build(RNGService.new(8), _params())
+	var a := State.new(plan, _params())
+	a.eval(0.7)
+	var b := State.new(plan, _params())
+	for P in [0.1, 0.9, 0.3, 0.7]:
+		b.eval(P)
+	check_eq(a.building_count(), b.building_count(), "same slot count")
+	var diffs := 0
+	for i in a.building_count():
+		if str(a.slot(i)) != str(b.slot(i)):
+			diffs += 1
+	check_eq(diffs, 0, "slots identical after scrub walk")
+
+func test_state_first_eval_silent_then_events() -> void:
+	var plan := Plan.build(RNGService.new(8), _params())
+	var t := State.new(plan, _params())
+	check_eq(t.eval(0.5)["events"].size(), 0, "first eval fires nothing")
+	var evs := []
+	var P := 0.5
+	while P < 0.72:
+		P += 0.002
+		evs.append_array(t.eval(P)["events"])
+	var kinds := {}
+	for e in evs:
+		kinds[e["kind"]] = true
+	check(kinds.has("era"), "era edge crossed fires era")
+	check(kinds.has("topout") or kinds.has("demolish"), "life happens between 0.5 and 0.72")
+
+func test_state_monotone_and_demo() -> void:
+	var plan := Plan.build(RNGService.new(8), _params())
+	var t := State.new(plan, _params())
+	t.eval(0.4)
+	var grown := 0
+	var p_before := {}
+	for i in t.building_count():
+		p_before[i] = t.slot(i)["progress"]
+	t.eval(0.45)
+	for i in t.building_count():
+		var s := t.slot(i)
+		if s["demo"] == 0.0:
+			check(s["progress"] >= float(p_before[i]) - 0.0001, "progress monotone without demo")
+		if s["progress"] > float(p_before[i]) + 0.0001:
+			grown += 1
+	check(grown > 0, "something under construction between 0.40 and 0.45")
+
+func test_state_changed_is_sparse() -> void:
+	var plan := Plan.build(RNGService.new(8), _params())
+	var t := State.new(plan, _params())
+	var first: Dictionary = t.eval(0.5)
+	check(first["changed"].size() > 0, "first eval reports active slots as changed")
+	var second: Dictionary = t.eval(0.5)
+	check_eq(second["changed"].size(), 0, "no change when P static")
+	var third: Dictionary = t.eval(0.503)
+	check(third["changed"].size() < t.building_count() / 4,
+			"small P step touches a small slot subset (got %d of %d)" % [third["changed"].size(), t.building_count()])
+
+func test_state_cranes_only_during_construction() -> void:
+	var plan := Plan.build(RNGService.new(8), _params())
+	var t := State.new(plan, _params())
+	t.eval(0.5)
+	var cranes := 0
+	for i in t.building_count():
+		var s := t.slot(i)
+		if s["crane"]:
+			cranes += 1
+			check(s["progress"] < 0.999 or s["demo"] == 0.0, "crane only while rising")
+			check(s["floors"] >= 8, "crane only on tall builds")
+	check(cranes > 0, "mid-run has active cranes")
