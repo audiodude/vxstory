@@ -17,6 +17,7 @@ SET=(
   "chromatic_cascade:fresco"
   "matter_cycle:tides"
   "fluid_swirl:aurora"
+  "metro_rise:century"
 )
 [[ $# -gt 0 ]] && SET=("$@")
 
