@@ -82,3 +82,57 @@ func test_roads_nodes_connect() -> void:
 		check_eq(str(na["pos"]), str(s["a"]), "segment a matches node na")
 		check_eq(str(nb["pos"]), str(s["b"]), "segment b matches node nb")
 		check(s["id"] in na["segs"] and s["id"] in nb["segs"], "node backrefs segment")
+
+# ---------------- citygen/lots ----------------
+
+const Lots = preload("res://citygen/lots.gd")
+
+func _city(seed_v: int) -> Dictionary:
+	var svc := RNGService.new(seed_v)
+	var p := {"city_radius": 600.0, "block_min": 90.0, "block_max": 130.0,
+			"boulevard_count": 2, "park_pct": 0.07, "tower_share": 0.25,
+			"lot_fill": 0.8}
+	var roads := Roads.build(svc.stream("roads"), p)
+	return {"roads": roads, "lots": Lots.build(svc.stream("lots"), roads, p), "params": p}
+
+func test_lots_front_roads() -> void:
+	var c := _city(5)
+	check(c["lots"]["lots"].size() > 50, "a real city has lots")
+	for l in c["lots"]["lots"]:
+		check(l["front_seg"] >= 0 and l["front_seg"] < c["roads"]["segments"].size(),
+				"lot fronts a real segment")
+
+func test_lots_inside_blocks_and_districts() -> void:
+	var c := _city(5)
+	var blocks: Array = c["lots"]["blocks"]
+	for l in c["lots"]["lots"]:
+		check(blocks[l["block"]]["rect"].grow(0.5).encloses(l["rect"]), "lot within block")
+		check(l["district"] in ["core", "commercial", "residential", "industrial"], "district set")
+	var seen := {}
+	for b in blocks:
+		seen[b["district"]] = true
+	check(seen.has("park"), "some parks")
+	check(seen.has("core") and seen.has("residential"), "district spread")
+
+func test_lots_avoid_diagonal_corridors() -> void:
+	var c := _city(5)
+	for l in c["lots"]["lots"]:
+		for s in c["roads"]["segments"]:
+			if s["diag"]:
+				var center: Vector2 = l["rect"].get_center()
+				var q := Geometry2D.get_closest_point_to_segment(center, s["a"], s["b"])
+				check(q.distance_to(center) > s["width"] * 0.5,
+						"lot center clear of diagonal corridor")
+
+func test_parcels_are_grouped() -> void:
+	var found_any := false
+	for seed_v in [9, 5, 21, 33]:
+		var c := _city(seed_v)
+		for pc in c["lots"]["parcels"]:
+			found_any = true
+			check(pc["lots"].size() >= 2, "parcel groups >=2 lots")
+			for li in pc["lots"]:
+				check_eq(c["lots"]["lots"][li]["parcel"], pc["id"], "backref consistent")
+				check(pc["rect"].grow(0.5).encloses(c["lots"]["lots"][li]["rect"]),
+						"parcel rect covers member lots")
+	check(found_any, "at least one parcel across seeds")

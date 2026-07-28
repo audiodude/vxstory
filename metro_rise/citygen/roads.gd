@@ -6,7 +6,9 @@ extends RefCounted
 #   "segments": [{id, a: Vector2, b: Vector2, na, nb, kind: "street"|"blvd",
 #                 diag: bool, ring: int, width: float}],
 #   "nodes":    [{id, pos: Vector2, segs: [int], ring: int}],
-#   "xs": PackedFloat32Array, "ys": PackedFloat32Array }
+#   "xs": PackedFloat32Array, "ys": PackedFloat32Array,
+#   "kx": Array[String], "ky": Array[String],   # per-line kinds
+#   "vseg": {"i:j": id}, "hseg": {"i:j": id} }  # grid-cell -> segment lookup
 
 const RINGS := 6
 const W_STREET := 12.0
@@ -28,19 +30,22 @@ static func build(rng: RandomNumberGenerator, params: Dictionary) -> Dictionary:
 			nodes.append({"id": nodes.size(), "pos": pos, "segs": [], "ring": _ring(pos, r)})
 
 	var segments: Array = []
+	var vseg := {}
+	var hseg := {}
 	for i in xs.size():
 		for j in ys.size() - 1:
-			_add_seg(segments, nodes, grid["%d,%d" % [i, j]], grid["%d,%d" % [i, j + 1]], kx[i], false)
+			vseg["%d:%d" % [i, j]] = _add_seg(segments, nodes, grid["%d,%d" % [i, j]], grid["%d,%d" % [i, j + 1]], kx[i], false)
 	for j in ys.size():
 		for i in xs.size() - 1:
-			_add_seg(segments, nodes, grid["%d,%d" % [i, j]], grid["%d,%d" % [i + 1, j]], ky[j], false)
+			hseg["%d:%d" % [i, j]] = _add_seg(segments, nodes, grid["%d,%d" % [i, j]], grid["%d,%d" % [i + 1, j]], ky[j], false)
 	for s in segments:
 		s["ring"] = _ring((s["a"] + s["b"]) * 0.5, r)
 
 	for k in int(params.get("boulevard_count", 2)):
 		_walk_diagonal(rng, segments, nodes, grid, xs, ys, r)
 
-	return {"segments": segments, "nodes": nodes, "xs": xs, "ys": ys}
+	return {"segments": segments, "nodes": nodes, "xs": xs, "ys": ys,
+			"kx": kx, "ky": ky, "vseg": vseg, "hseg": hseg}
 
 static func _lines(rng: RandomNumberGenerator, params: Dictionary) -> PackedFloat32Array:
 	var r: float = params["city_radius"]
