@@ -295,3 +295,46 @@ func test_state_cranes_only_during_construction() -> void:
 			check(s["progress"] < 0.999 or s["demo"] == 0.0, "crane only while rising")
 			check(s["floors"] >= 8, "crane only on tall builds")
 	check(cranes > 0, "mid-run has active cranes")
+
+# ---------------- sim/sun + campath ----------------
+
+const Sun = preload("res://sim/sun.gd")
+const Cam = preload("res://sim/campath.gd")
+
+func _sun_p() -> Dictionary:
+	return {"fog_amount": 0.35, "star_density": 0.5}
+
+func test_sun_day_night() -> void:
+	var noon := Sun.eval(0.45, "daybreak", _sun_p())
+	var mid := Sun.eval(0.97, "daybreak", _sun_p())
+	check(noon["night"] < 0.05, "noon is day")
+	check(mid["night"] > 0.95, "late is night")
+	check(mid["moon_energy"] > 0.0 and noon["moon_energy"] == 0.0, "moon only at night")
+	check(noon["sun_dir"].y < -0.5, "noon sun shines downward")
+	check(noon["sun_energy"] > 1.0 and mid["sun_energy"] < 0.05, "sun energy follows arc")
+	check(mid["star_alpha"] > 0.9 and noon["star_alpha"] == 0.0, "stars only at night")
+
+func test_sun_continuous_at_dusk() -> void:
+	for day in [0.859, 0.861, 0.039, 0.041]:
+		var a := Sun.eval(day, "sodium", _sun_p())
+		var b := Sun.eval(day + 0.002, "sodium", _sun_p())
+		check(absf(a["night"] - b["night"]) < 0.08, "no night discontinuity at %f" % day)
+		check(abs(a["sun_energy"] - b["sun_energy"]) < 0.2, "no energy pop at %f" % day)
+
+func test_sun_palettes_differ() -> void:
+	var a := Sun.eval(0.8, "daybreak", _sun_p())
+	var b := Sun.eval(0.8, "sodium", _sun_p())
+	check(str(a["sun_color"]) != str(b["sun_color"]), "palettes grade the sun")
+
+func test_campath_smooth_and_orbiting() -> void:
+	var p := {"cam_pull": 1.0, "cam_height": 1.0, "orbit_rate": 1.3,
+			"orbit_deg0": 20.0, "cam_fov": 40.0}
+	var a: Vector3 = Cam.eval(10.0, 0.3, p)["pos"]
+	var b: Vector3 = Cam.eval(10.1, 0.3005, p)["pos"]
+	check(a.distance_to(b) < 1.5, "sub-1.5m step per 0.1s")
+	var near: Vector3 = Cam.eval(0.0, 0.1, p)["pos"]
+	var far: Vector3 = Cam.eval(100.0, 0.9, p)["pos"]
+	check(far.length() > near.length() + 200.0, "pulls back as city grows")
+	check(far.y > near.y + 100.0, "rises as city grows")
+	var look: Vector3 = Cam.eval(50.0, 0.5, p)["look"]
+	check(look.length() < 120.0, "look target stays near center")
