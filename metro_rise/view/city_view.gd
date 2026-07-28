@@ -93,6 +93,8 @@ func setup(plan: Dictionary, params: Dictionary, slot_count: int) -> void:
 	car_mat.shader = CarShader
 	cars_mm = _pool(BoxMesh.new(), car_mat, CAR_CAP, true, true)
 
+	_setup_dust()
+
 func _pool(mesh: Mesh, mat: Material, count: int, colors: bool, custom: bool) -> MultiMesh:
 	var mm := MultiMesh.new()
 	mm.transform_format = MultiMesh.TRANSFORM_3D
@@ -155,6 +157,57 @@ func _write_lamps(lamps: Array) -> void:
 				Basis().scaled(Vector3(1.0, 7.5, 1.0)),
 				Vector3(l["pos"].x, 3.75, l["pos"].y)))
 		lamps_mm.set_instance_custom_data(i, Color(ring_frac, fmod(absf(l["pos"].x + l["pos"].y), 1.0), 0.0, 0.0))
+
+var _dust: Array = []
+var _dust_next := 0
+
+func _setup_dust() -> void:
+	var pmat := ParticleProcessMaterial.new()
+	pmat.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_SPHERE
+	pmat.emission_sphere_radius = 6.0
+	pmat.direction = Vector3(0, 1, 0)
+	pmat.spread = 65.0
+	pmat.initial_velocity_min = 5.0
+	pmat.initial_velocity_max = 13.0
+	pmat.gravity = Vector3(0, -4.0, 0)
+	pmat.scale_min = 2.0
+	pmat.scale_max = 4.5
+	var grad := Gradient.new()
+	grad.set_color(0, Color(0.5, 0.46, 0.4, 0.8))
+	grad.set_color(1, Color(0.45, 0.42, 0.38, 0.0))
+	var gt := GradientTexture1D.new()
+	gt.gradient = grad
+	pmat.color_ramp = gt
+	var quad := QuadMesh.new()
+	quad.size = Vector2(3.0, 3.0)
+	var qmat := StandardMaterial3D.new()
+	qmat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	qmat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	qmat.vertex_color_use_as_albedo = true
+	qmat.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
+	quad.material = qmat
+	for i in 6:
+		var gp := GPUParticles3D.new()
+		gp.process_material = pmat
+		gp.draw_pass_1 = quad
+		gp.one_shot = true
+		gp.emitting = false
+		gp.amount = 48
+		gp.lifetime = 1.6
+		gp.explosiveness = 0.92
+		gp.set("use_fixed_seed", true)
+		add_child(gp)
+		_dust.append(gp)
+
+func on_event(e: Dictionary) -> void:
+	if e["kind"] != "demolish" or _dust.is_empty():
+		return
+	var gp: GPUParticles3D = _dust[_dust_next]
+	_dust_next = (_dust_next + 1) % _dust.size()
+	var pos: Vector2 = e["pos"]
+	gp.position = Vector3(pos.x, 7.0, pos.y)
+	gp.set("seed", hash(str(e["lot"])))
+	gp.restart()
 
 func update_cars(car_list: Array) -> void:
 	var n := mini(car_list.size(), CAR_CAP)

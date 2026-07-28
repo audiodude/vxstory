@@ -12,11 +12,13 @@ const Sun = preload("res://sim/sun.gd")
 const Cam = preload("res://sim/campath.gd")
 const Traffic = preload("res://sim/traffic.gd")
 const CityView = preload("res://view/city_view.gd")
+const CraneView = preload("res://view/crane_view.gd")
 
 var plan: Dictionary = {}
 var tracker  # StateTracker
 var traffic  # Traffic
 var city_view  # CityView
+var crane_view  # CraneView
 var world: Node3D
 var env: Environment
 var sky_mat: ShaderMaterial
@@ -130,6 +132,10 @@ func restart() -> void:
 	world.add_child(city_view)
 	city_view.setup(plan, params, tracker.building_count())
 
+	crane_view = CraneView.new()
+	world.add_child(crane_view)
+	crane_view.setup(tracker.building_count())
+
 	cam = Camera3D.new()
 	cam.near = 2.0
 	cam.far = 4000.0
@@ -157,8 +163,11 @@ func _frame_update(delta: float) -> void:
 	var st: Dictionary = tracker.eval(params["progress"])
 	_ring_p = st["ring_p"]
 	city_view.apply_slots(tracker, st["changed"])
+	crane_view.sync(tracker, st["changed"])
+	crane_view.tick(sim_t)
 	for ev in st["events"]:
 		emit_event(ev["kind"])
+		city_view.on_event(ev)
 
 	traffic.tick(delta, sim_t, params["progress"], {
 		"car_density": params["car_density"], "car_speed": params["car_speed"],
