@@ -1,7 +1,8 @@
 shader_type spatial;
-// Roads + sidewalks (flat MultiMesh boxes). INSTANCE_CUSTOM = (kind, ring_frac,
-// seg_len_m, 0): kind 0 street, 1 boulevard, 2 sidewalk. Streets/boulevards get
-// lane markings; everything paves in (dirt -> surface) as ring_frac passes the
+// Roads, sidewalks and intersection pads (flat MultiMesh boxes).
+// INSTANCE_CUSTOM = (kind, ring_frac, box_len_m, 0): kind 0 street,
+// 1 boulevard, 2 sidewalk, 3 intersection pad. Streets/boulevards get lane
+// markings; everything paves in (dirt -> surface) as ring_frac passes the
 // global ring_p (city growth front).
 
 uniform float ring_p = 1.0;
@@ -32,7 +33,10 @@ void fragment() {
 	vec3 dirt = vec3(0.2, 0.16, 0.12) * (0.85 + 0.3 * hash12(floor(vec2(u_m, w_m) / 3.0)));
 	vec3 surface;
 	float marking = 0.0;
-	if (kind > 1.5) {
+	if (kind > 2.5) {
+		// Intersection pad: plain surface, no markings.
+		surface = vec3(0.105, 0.105, 0.115) * (0.9 + 0.2 * hash12(floor(vec2(u_m, w_m) / 4.0)));
+	} else if (kind > 1.5) {
 		surface = vec3(0.28, 0.28, 0.29) * (0.9 + 0.2 * hash12(floor(vec2(u_m, w_m) / 2.0)));
 	} else {
 		surface = vec3(0.11, 0.11, 0.12) * (0.9 + 0.2 * hash12(floor(vec2(u_m, w_m) / 4.0)));
@@ -42,8 +46,8 @@ void fragment() {
 		float fw_u = fwidth(u_m) + 1e-4;
 		float fw_w = fwidth(w_m) + 1e-4;
 		float cover = clamp(0.28 / fw_w, 0.0, 1.0) * clamp(3.0 / fw_u, 0.0, 1.0);
-		// No markings through intersections (the last ~10 m before each node).
-		float ends = 1.0 - smoothstep(v_custom.z * 0.5 - 10.0, v_custom.z * 0.5 - 4.0, abs(u_m));
+		// Markings stop a few metres short of the box ends (intersection pads).
+		float ends = 1.0 - smoothstep(v_custom.z * 0.5 - 5.0, v_custom.z * 0.5 - 1.5, abs(u_m));
 		if (kind > 0.5) {
 			if (abs(w_m) < 1.3) surface = vec3(0.1, 0.12, 0.1);   // median band
 			float lane = half_w * 0.5;

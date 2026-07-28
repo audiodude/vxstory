@@ -56,7 +56,7 @@ func setup(plan: Dictionary, params: Dictionary, slot_count: int) -> void:
 	road_mat = ShaderMaterial.new()
 	road_mat.shader = RoadShader
 	var segs: Array = plan["roads"]["segments"]
-	roads_mm = _pool(BoxMesh.new(), road_mat, segs.size() * 3, false, true)
+	roads_mm = _pool(BoxMesh.new(), road_mat, segs.size() * 3 + plan["roads"]["nodes"].size(), false, true)
 	_write_roads(segs)
 
 	var ground := MeshInstance3D.new()
@@ -112,30 +112,53 @@ func _pool(mesh: Mesh, mat: Material, count: int, colors: bool, custom: bool) ->
 	return mm
 
 func _write_roads(segs: Array) -> void:
+	# One square pad per intersection; road boxes butt INTO the pads instead of
+	# extending across the node. Collinear neighbors used to overlap co-planar
+	# in the node square and z-fight (visible as flicker at every intersection,
+	# paved or dirt). Pads sit above road tops, roads tuck 1 m under their rim.
 	var ring_div := 6.0
+	var nodes: Array = _plan["roads"]["nodes"]
+	var pad_w := PackedFloat32Array()
+	pad_w.resize(nodes.size())
+	for n in nodes:
+		var w := 0.0
+		for sid in n["segs"]:
+			w = maxf(w, float(segs[sid]["width"]))
+		pad_w[n["id"]] = w + 2.0
+	var pad_base := segs.size() * 3
+	for n in nodes:
+		var pw: float = pad_w[n["id"]]
+		var nring: float = (float(n["ring"]) + 0.2) / ring_div
+		roads_mm.set_instance_transform(pad_base + n["id"], Transform3D(
+				Basis().scaled(Vector3(pw, 0.06, pw)),
+				Vector3(n["pos"].x, 0.07, n["pos"].y)))
+		roads_mm.set_instance_custom_data(pad_base + n["id"], Color(3.0, nring, pw, 0.0))
 	for i in segs.size():
 		var s: Dictionary = segs[i]
 		var a: Vector2 = s["a"]
 		var b: Vector2 = s["b"]
-		var mid := (a + b) * 0.5
+		var dir := (b - a).normalized()
 		var seg_len := a.distance_to(b)
 		var ang := (b - a).angle()
 		var kind := 1.0 if s["kind"] == "blvd" else 0.0
 		var ring_frac: float = (float(s["ring"]) + 0.2) / ring_div
 		var basis := Basis(Vector3.UP, -ang)
-		# Stagger heights by orientation so overlapping boxes at intersections
-		# never share a plane (co-planar tops z-fight and shimmer in motion):
-		# vertical grid roads lowest, horizontal above them, diagonals on top.
+		var start: float = pad_w[s["na"]] * 0.5 - 1.0
+		var endd: float = seg_len - pad_w[s["nb"]] * 0.5 + 1.0
+		var box_len := maxf(endd - start, 2.0)
+		var mid: Vector2 = a + dir * ((start + endd) * 0.5)
+		# Orientation height stagger (crossing diagonals vs grid roads).
 		var road_y := 0.036
 		if s["diag"]:
-			road_y = 0.06
+			road_y = 0.052
 		elif absf(b.x - a.x) > absf(b.y - a.y):
-			road_y = 0.048
+			road_y = 0.044
 		roads_mm.set_instance_transform(i * 3, Transform3D(
-				basis * Basis().scaled(Vector3(seg_len + float(s["width"]), 0.07, float(s["width"]))),
+				basis * Basis().scaled(Vector3(box_len, 0.07, float(s["width"]))),
 				Vector3(mid.x, road_y, mid.y)))
-		roads_mm.set_instance_custom_data(i * 3, Color(kind, ring_frac, seg_len, 0.0))
+		roads_mm.set_instance_custom_data(i * 3, Color(kind, ring_frac, box_len, 0.0))
 		if not s["diag"]:
+			var wmid := (a + b) * 0.5
 			var side := Vector2(-sin(ang), cos(ang))
 			var walk_y := 0.028 if absf(b.x - a.x) > absf(b.y - a.y) else 0.024
 			for k in 2:
@@ -143,7 +166,7 @@ func _write_roads(segs: Array) -> void:
 				var off := side * (float(s["width"]) * 0.5 + 1.5) * flip
 				roads_mm.set_instance_transform(i * 3 + 1 + k, Transform3D(
 						basis * Basis().scaled(Vector3(seg_len, 0.05, 3.0)),
-						Vector3(mid.x + off.x, walk_y, mid.y + off.y)))
+						Vector3(wmid.x + off.x, walk_y, wmid.y + off.y)))
 				roads_mm.set_instance_custom_data(i * 3 + 1 + k, Color(2.0, ring_frac, seg_len, 0.0))
 
 func _write_trees(trees: Array) -> void:
