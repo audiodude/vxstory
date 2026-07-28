@@ -10,6 +10,9 @@ const RoadShader := preload("res://view/road.gdshader")
 const GroundShader := preload("res://view/ground.gdshader")
 const TreeShader := preload("res://view/tree.gdshader")
 const LampShader := preload("res://view/lamp.gdshader")
+const CarShader := preload("res://view/car.gdshader")
+
+const CAR_CAP := 2048
 
 var buildings: MultiMesh
 var roofs: MultiMesh
@@ -17,10 +20,13 @@ var dirt: MultiMesh
 var roads_mm: MultiMesh
 var trees_mm: MultiMesh
 var lamps_mm: MultiMesh
+var cars_mm: MultiMesh
 var facade_mat: ShaderMaterial
 var road_mat: ShaderMaterial
 var tree_mat: ShaderMaterial
 var lamp_mat: ShaderMaterial
+var car_mat: ShaderMaterial
+var _last_car_count := 0
 
 var _plan: Dictionary
 var _params: Dictionary
@@ -82,6 +88,10 @@ func setup(plan: Dictionary, params: Dictionary, slot_count: int) -> void:
 	pole.radial_segments = 5
 	lamps_mm = _pool(pole, lamp_mat, plan["lamps"].size(), false, true)
 	_write_lamps(plan["lamps"])
+
+	car_mat = ShaderMaterial.new()
+	car_mat.shader = CarShader
+	cars_mm = _pool(BoxMesh.new(), car_mat, CAR_CAP, true, true)
 
 func _pool(mesh: Mesh, mat: Material, count: int, colors: bool, custom: bool) -> MultiMesh:
 	var mm := MultiMesh.new()
@@ -145,6 +155,20 @@ func _write_lamps(lamps: Array) -> void:
 				Basis().scaled(Vector3(1.0, 7.5, 1.0)),
 				Vector3(l["pos"].x, 3.75, l["pos"].y)))
 		lamps_mm.set_instance_custom_data(i, Color(ring_frac, fmod(absf(l["pos"].x + l["pos"].y), 1.0), 0.0, 0.0))
+
+func update_cars(car_list: Array) -> void:
+	var n := mini(car_list.size(), CAR_CAP)
+	for i in n:
+		var c: Dictionary = car_list[i]
+		var p: Vector2 = c["pos"]
+		var basis := Basis(Vector3.UP, -float(c["ang"])) * Basis().scaled(Vector3(4.4, 1.5, 1.9))
+		cars_mm.set_instance_transform(i, Transform3D(basis, Vector3(p.x, 0.83, p.y)))
+		var body := Color.from_hsv(c["hue"], 0.55 if c["hue"] < 0.7 else 0.05, 0.35 + 0.45 * fmod(c["hue"] * 7.31, 1.0)).srgb_to_linear()
+		cars_mm.set_instance_color(i, body)
+		cars_mm.set_instance_custom_data(i, Color(1.0 if c["stopped"] else 0.0, 0.0, 0.0, 0.0))
+	for i in range(n, _last_car_count):
+		cars_mm.set_instance_transform(i, _zero)
+	_last_car_count = n
 
 func apply_slots(tracker, changed: Array) -> void:
 	for i in changed:
@@ -233,3 +257,4 @@ func set_globals(sun_out: Dictionary, live: Dictionary, sim_t: float) -> void:
 	tree_mat.set_shader_parameter("t", sim_t)
 	lamp_mat.set_shader_parameter("ring_p", live["ring_p"])
 	lamp_mat.set_shader_parameter("night", night)
+	car_mat.set_shader_parameter("night", night)

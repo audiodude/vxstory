@@ -338,3 +338,45 @@ func test_campath_smooth_and_orbiting() -> void:
 	check(far.y > near.y + 100.0, "rises as city grows")
 	var look: Vector3 = Cam.eval(50.0, 0.5, p)["look"]
 	check(look.length() < 120.0, "look target stays near center")
+
+# ---------------- sim/traffic ----------------
+
+const Traffic = preload("res://sim/traffic.gd")
+
+func _live() -> Dictionary:
+	return {"car_density": 0.7, "car_speed": 1.0, "light_cycle": 14.0}
+
+func _near_any_segment(plan: Dictionary, p: Vector2, tol: float) -> bool:
+	for s in plan["roads"]["segments"]:
+		if Geometry2D.get_closest_point_to_segment(p, s["a"], s["b"]).distance_to(p) <= tol:
+			return true
+	return false
+
+func test_traffic_on_lanes_and_spaced() -> void:
+	var plan := Plan.build(RNGService.new(8), _params())
+	var tr := Traffic.new(plan, 8)
+	for i in 600:
+		tr.tick(1.0 / 60.0, i / 60.0, 0.8, _live())
+	check(tr.car_count() > 50, "traffic exists at P=0.8 (got %d)" % tr.car_count())
+	for c in tr.cars():
+		check(_near_any_segment(plan, c["pos"], 15.0), "car within a road corridor")
+
+func test_traffic_deterministic_and_reseed() -> void:
+	var plan := Plan.build(RNGService.new(8), _params())
+	var a := Traffic.new(plan, 8)
+	var b := Traffic.new(plan, 8)
+	for i in 120:
+		a.tick(1.0 / 60.0, i / 60.0, 0.7, _live())
+		b.tick(1.0 / 60.0, i / 60.0, 0.7, _live())
+	check_eq(a.car_count(), b.car_count(), "same seed same count")
+	check_eq(str(a.cars().slice(0, 5)), str(b.cars().slice(0, 5)), "same seed same flow")
+	a.reseed(90.0)
+	b.reseed(90.0)
+	check_eq(a.car_count(), b.car_count(), "reseed deterministic")
+
+func test_traffic_gated_by_P() -> void:
+	var plan := Plan.build(RNGService.new(8), _params())
+	var tr := Traffic.new(plan, 8)
+	for i in 120:
+		tr.tick(1.0 / 60.0, i / 60.0, 0.1, _live())
+	check_eq(tr.car_count(), 0, "no cars in the brick dawn")

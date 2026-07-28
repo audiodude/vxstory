@@ -10,10 +10,12 @@ const Plan = preload("res://citygen/plan.gd")
 const State = preload("res://sim/state.gd")
 const Sun = preload("res://sim/sun.gd")
 const Cam = preload("res://sim/campath.gd")
+const Traffic = preload("res://sim/traffic.gd")
 const CityView = preload("res://view/city_view.gd")
 
 var plan: Dictionary = {}
 var tracker  # StateTracker
+var traffic  # Traffic
 var city_view  # CityView
 var world: Node3D
 var env: Environment
@@ -86,6 +88,7 @@ func restart() -> void:
 			c.queue_free()
 	plan = Plan.build(rng, params)
 	tracker = State.new(plan, params)
+	traffic = Traffic.new(plan, seed_value)
 
 	world = Node3D.new()
 	add_child(world)
@@ -133,20 +136,22 @@ func restart() -> void:
 	world.add_child(cam)
 	cam.current = true
 
-	_frame_update()
+	_frame_update(0.0)
 
 func apply_live(_p: Dictionary) -> void:
 	pass  # all live params are read fresh in _frame_update each frame
 
 func _on_scrub(t: float) -> void:
 	sim_t = t
+	if traffic != null:
+		traffic.reseed(t)
 
 func _process(delta: float) -> void:
 	super._process(delta)
 	sim_t += delta
-	_frame_update()
+	_frame_update(delta)
 
-func _frame_update() -> void:
+func _frame_update(delta: float) -> void:
 	if tracker == null or params.is_empty():
 		return
 	var st: Dictionary = tracker.eval(params["progress"])
@@ -154,6 +159,12 @@ func _frame_update() -> void:
 	city_view.apply_slots(tracker, st["changed"])
 	for ev in st["events"]:
 		emit_event(ev["kind"])
+
+	traffic.tick(delta, sim_t, params["progress"], {
+		"car_density": params["car_density"], "car_speed": params["car_speed"],
+		"light_cycle": params["light_cycle"],
+	})
+	city_view.update_cars(traffic.cars())
 
 	var sun_out: Dictionary = Sun.eval(params["time_of_day"], params["palette"], params)
 	_apply_sky(sun_out)
