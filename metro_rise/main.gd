@@ -65,7 +65,7 @@ func get_schema() -> Dictionary:
 			PS.f("lamp_density", 0.6, 0.0, 1.0, {"live": false}),
 			PS.f("win_scale", 1.0, 0.7, 1.4, {"live": false}),
 			# Live look dials.
-			PS.f("lit_fraction", 0.6, 0.0, 0.95, {"macro": {"name": "nightlife", "lo": 0.25, "hi": 0.95}}),
+			PS.f("lit_fraction", 0.45, 0.0, 0.95, {"macro": {"name": "nightlife", "lo": 0.15, "hi": 0.7}}),
 			PS.f("neon_amount", 0.45, 0.0, 1.0, {"macro": {"name": "nightlife", "lo": 0.1, "hi": 1.0}}),
 			PS.f("glow", 1.1, 0.0, 3.0),
 			PS.f("fog_amount", 0.35, 0.0, 1.0),
