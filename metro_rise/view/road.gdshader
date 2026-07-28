@@ -31,29 +31,38 @@ void fragment() {
 
 	vec3 dirt = vec3(0.2, 0.16, 0.12) * (0.85 + 0.3 * hash12(floor(vec2(u_m, w_m) / 3.0)));
 	vec3 surface;
+	float marking = 0.0;
 	if (kind > 1.5) {
 		surface = vec3(0.28, 0.28, 0.29) * (0.9 + 0.2 * hash12(floor(vec2(u_m, w_m) / 2.0)));
 	} else {
 		surface = vec3(0.11, 0.11, 0.12) * (0.9 + 0.2 * hash12(floor(vec2(u_m, w_m) / 4.0)));
 		float half_w = v_dims.z * 0.5;
+		// Anti-aliased, distance-faded markings: hard step() lines shimmer once
+		// they go subpixel, so edges use fwidth and coverage fades them out.
+		float fw_u = fwidth(u_m) + 1e-4;
+		float fw_w = fwidth(w_m) + 1e-4;
+		float cover = clamp(0.28 / fw_w, 0.0, 1.0) * clamp(3.0 / fw_u, 0.0, 1.0);
+		// No markings through intersections (the last ~10 m before each node).
+		float ends = 1.0 - smoothstep(v_custom.z * 0.5 - 10.0, v_custom.z * 0.5 - 4.0, abs(u_m));
 		if (kind > 0.5) {
-			// Boulevard: darker median band + a dashed line per carriageway.
-			if (abs(w_m) < 1.3) surface = vec3(0.1, 0.12, 0.1);
+			if (abs(w_m) < 1.3) surface = vec3(0.1, 0.12, 0.1);   // median band
 			float lane = half_w * 0.5;
-			float dash = step(fract(u_m / 7.0), 0.55);
-			if (abs(abs(w_m) - lane) < 0.14 && dash > 0.5) surface = vec3(0.42, 0.42, 0.38);
-			if (abs(abs(w_m) - (half_w - 0.25)) < 0.12) surface = vec3(0.38, 0.38, 0.35);
+			float ph = fract(u_m / 7.0);
+			float dash = smoothstep(0.0, fw_u / 7.0, ph) * (1.0 - smoothstep(0.55, 0.55 + fw_u / 7.0, ph));
+			float lane_line = 1.0 - smoothstep(0.14 - fw_w, 0.14 + fw_w, abs(abs(w_m) - lane));
+			float edge_line = 1.0 - smoothstep(0.12 - fw_w, 0.12 + fw_w, abs(abs(w_m) - (half_w - 0.25)));
+			marking = max(lane_line * dash, edge_line * 0.8) * cover * ends;
 		} else {
-			// Street: single dashed centerline.
-			float dash = step(fract(u_m / 6.0), 0.5);
-			if (abs(w_m) < 0.13 && dash > 0.5) surface = vec3(0.42, 0.4, 0.32);
+			float ph = fract(u_m / 6.0);
+			float dash = smoothstep(0.0, fw_u / 6.0, ph) * (1.0 - smoothstep(0.5, 0.5 + fw_u / 6.0, ph));
+			float center = 1.0 - smoothstep(0.13 - fw_w, 0.13 + fw_w, abs(w_m));
+			marking = center * dash * cover * ends;
 		}
+		surface = mix(surface, vec3(0.42, 0.41, 0.35), marking);
 	}
 	ALBEDO = mix(dirt, surface, pave);
 	ROUGHNESS = mix(0.95, 0.9, pave);
 	SPECULAR = 0.02;   // no grazing sky-mirror on asphalt/dirt
 	// Markings keep a faint self-light after dusk so the grid stays legible.
-	if (kind < 1.5 && surface.r > 0.3) {
-		EMISSION = surface * night * pave * 0.3;
-	}
+	EMISSION = vec3(0.42, 0.41, 0.35) * (marking * night * pave * 0.2);
 }

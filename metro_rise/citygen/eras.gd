@@ -14,8 +14,9 @@ const FLOOR_RANGES := {
 	2: {"core": [24, 60], "commercial": [16, 40], "residential": [12, 24], "industrial": [3, 5]},
 }
 const WIN_W := {0: 1.6, 1: 1.9, 2: 1.5}
-const LINGER := 0.03      # min standing time before demolition
+const LINGER := 0.06      # min standing time before demolition
 const GAP := 0.015        # dust gap between demolition and groundbreaking
+const DEMO_SPREAD := 0.25 # teardowns trickle through the era, not at its edge
 const LAST_TOPOUT := 0.995
 
 static func timelines(rng: RandomNumberGenerator, lots_dict: Dictionary, params: Dictionary) -> Dictionary:
@@ -64,7 +65,7 @@ static func _lot_chain(rng: RandomNumberGenerator, l: Dictionary, params: Dictio
 		var demo_prob := _demo_prob(l["district"], params)
 		if rng.randf() > demo_prob:
 			break
-		var p_demo: float = maxf(e["p1"] + LINGER, _next_band_start(style, params) + rng.randf() * 0.12)
+		var p_demo: float = maxf(e["p1"] + LINGER, _next_band_start(style, params) + rng.randf() * DEMO_SPREAD)
 		var p_next := p_demo + GAP
 		if p_next >= 0.93 or _style_at_nominal(p_next, params) <= style:
 			break

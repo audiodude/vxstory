@@ -123,18 +123,27 @@ func _write_roads(segs: Array) -> void:
 		var kind := 1.0 if s["kind"] == "blvd" else 0.0
 		var ring_frac: float = (float(s["ring"]) + 0.2) / ring_div
 		var basis := Basis(Vector3.UP, -ang)
+		# Stagger heights by orientation so overlapping boxes at intersections
+		# never share a plane (co-planar tops z-fight and shimmer in motion):
+		# vertical grid roads lowest, horizontal above them, diagonals on top.
+		var road_y := 0.036
+		if s["diag"]:
+			road_y = 0.06
+		elif absf(b.x - a.x) > absf(b.y - a.y):
+			road_y = 0.048
 		roads_mm.set_instance_transform(i * 3, Transform3D(
-				basis * Basis().scaled(Vector3(seg_len + float(s["width"]), 0.08, float(s["width"]))),
-				Vector3(mid.x, 0.04, mid.y)))
+				basis * Basis().scaled(Vector3(seg_len + float(s["width"]), 0.07, float(s["width"]))),
+				Vector3(mid.x, road_y, mid.y)))
 		roads_mm.set_instance_custom_data(i * 3, Color(kind, ring_frac, seg_len, 0.0))
 		if not s["diag"]:
 			var side := Vector2(-sin(ang), cos(ang))
+			var walk_y := 0.028 if absf(b.x - a.x) > absf(b.y - a.y) else 0.024
 			for k in 2:
 				var flip := 1.0 if k == 0 else -1.0
 				var off := side * (float(s["width"]) * 0.5 + 1.5) * flip
 				roads_mm.set_instance_transform(i * 3 + 1 + k, Transform3D(
 						basis * Basis().scaled(Vector3(seg_len, 0.05, 3.0)),
-						Vector3(mid.x + off.x, 0.025, mid.y + off.y)))
+						Vector3(mid.x + off.x, walk_y, mid.y + off.y)))
 				roads_mm.set_instance_custom_data(i * 3 + 1 + k, Color(2.0, ring_frac, seg_len, 0.0))
 
 func _write_trees(trees: Array) -> void:

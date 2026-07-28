@@ -203,6 +203,23 @@ func test_replacement_happens() -> void:
 	check(demos > 20, "replacement demolitions exist (got %d)" % demos)
 	check(chains > 20, "replacement chains exist (got %d)" % chains)
 
+func test_churn_moderate() -> void:
+	# Schema-default replacement pressure: renewal happens, but the city must
+	# not read as constant demolish/rebuild churn (user feedback 2026-07-28).
+	var p := _params()
+	p["demolish_core"] = 0.55
+	p["demolish_edge"] = 0.12
+	var plan := Plan.build(RNGService.new(4), p)
+	var lots := 0
+	var demos := 0
+	for lot_id in plan["timelines"]:
+		lots += 1
+		for e in plan["timelines"][lot_id]:
+			if e["p_demo"] != INF:
+				demos += 1
+	check(demos > 5, "some renewal still happens (got %d)" % demos)
+	check(demos * 3 < lots, "no demolition avalanche: %d demos on %d lots" % [demos, lots])
+
 func test_parcels_demolish_together() -> void:
 	var found := false
 	for seed_v in [13, 4, 21]:
