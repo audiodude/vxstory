@@ -49,6 +49,7 @@ var burst_pool: Array[GPUParticles2D] = []
 var burst_i := 0
 var spawn_acc := 0.0
 var condense_cd := 0.0
+var stall_t := 0.0
 var sim_t := 0.0
 var s: RandomNumberGenerator
 var env: Environment
@@ -83,6 +84,7 @@ func get_schema() -> Dictionary:
 			PS.f("condense_radius", 140.0, 60.0, 300.0),
 			PS.f("condense_cooldown", 1.0, 0.2, 4.0),
 			PS.f("particle_max_age", 14.0, 3.0, 30.0),
+			PS.f("purge_delay", 5.0, 0.0, 30.0),
 			PS.f("glow", 1.1, 0.0, 3.0),
 			PS.e("palette", "spectrum", PackedStringArray(["spectrum", "ember", "mono"]), {"live": false}),
 		],
@@ -100,6 +102,7 @@ func restart() -> void:
 	burst_i = 0
 	spawn_acc = 0.0
 	condense_cd = 0.0
+	stall_t = 0.0
 	sim_t = 0.0
 	s = rng.stream("sim")
 	var we := WorldEnvironment.new()
@@ -293,6 +296,7 @@ func _process(delta: float) -> void:
 	if spawn_acc >= params["spawn_interval"] and bodies.size() < int(params["max_bodies"]):
 		spawn_acc = 0.0
 		_spawn_poly(Vector2(s.randf_range(200, 1720), -100), params["poly_size"] * s.randf_range(0.6, 1.4), Vector2(s.randf_range(-80, 80), s.randf_range(0, 120)))
+	_tick_purge(delta)
 	# swarm physics
 	_rebuild_flow()
 	var drag: float = params["particle_drag"]
@@ -336,6 +340,28 @@ func _process(delta: float) -> void:
 		r["alpha"] = maxf(r["alpha"] - delta * 1.5, 0.0)
 	rings = rings.filter(func(r): return r["alpha"] > 0.0)
 	rings_node.queue_redraw()
+
+func _tick_purge(delta: float) -> void:
+	# Escape hatch. Polygons only ever leave by shattering, and shattering needs a
+	# fast impact — so a deep enough pile is an absorbing state: soft landings only,
+	# no fragments, no condensation, no shatter events to spike fragility. Once the
+	# pile is at capacity and everything on it has come to rest, blow the lot.
+	var limit: float = params["purge_delay"]
+	if limit <= 0.0 or bodies.size() < int(params["max_bodies"]):
+		stall_t = 0.0
+		return
+	for b in bodies:
+		if b.linear_velocity.length() > 25.0 or absf(b.angular_velocity) > 0.5:
+			stall_t = 0.0
+			return
+	stall_t += delta
+	if stall_t < limit:
+		return
+	stall_t = 0.0
+	for b in bodies.duplicate():
+		if is_instance_valid(b):
+			_shatter(b)
+
 
 func _condense(center: Vector2) -> void:
 	var avg_col := Color(0, 0, 0)

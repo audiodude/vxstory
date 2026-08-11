@@ -57,6 +57,13 @@ Low-level knobs (pin exact values via a preset's `overrides`).
   events; prevents rapid-fire condensation during dense particle accumulations.
 - **particle_max_age** (`float`, 3.0–30.0, default `14.0`) — lifetime in seconds before a
   particle is removed regardless of position.
+- **purge_delay** (`float`, 0.0–30.0, default `5.0`) — seconds a *saturated* pile (body count
+  at `max_bodies`) may sit completely at rest before every polygon detonates at once. This is the
+  deadlock escape hatch: polygons only ever leave the field by shattering, and shattering needs a
+  fast impact, so a pile deep enough that new rain lands softly is an absorbing state — no
+  fragments, no condensation, and no `shatter` events to spike a fragility envelope. The purge
+  dumps the whole pile back into the swarm, which re-condenses and restarts the cycle. Set to
+  `0.0` to disable (the pile is then allowed to stall forever).
 - **glow** (`float`, 0.0–3.0, default `1.1`) — additive glow intensity applied to the whole
   scene via Godot's environment bloom.
 - **palette** (`enum`, default `spectrum`) — color scheme for polygons (and the particles they
