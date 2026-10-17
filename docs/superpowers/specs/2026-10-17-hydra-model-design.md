@@ -38,9 +38,10 @@ These numbers come from throwaway scripts in `/tmp/hydra-spike`, using hydra-syn
 hydra/
   package.json        # deps: hydra-synth, playwright, ws; "test": "node --test"
   package-lock.json   # committed
-  render.mjs          # CLI: render a preset to a video file, or --preview
-  page.html           # canvas + hydra-synth + lib/runtime.js
-  lib/runtime.js      # in-page: seeded rand, arc helpers, at(), frame loop
+  render.mjs          # CLI: render a preset to a video file (built)
+  preview.mjs         # live preview server (exists)
+  preview.html        # preview UI: sketch/seed/speed/start-at controls (exists)
+  lib/runtime.js      # in-page: seeded rand, arc helpers, at() (exists); shared by preview and render
   sketches/<name>.js  # Hydra code: one original sketch per file
   presets/<name>.json # {model, sketch, seed, duration_sec}
   test/*.test.mjs
@@ -79,10 +80,10 @@ Seeds make variation: each sketch derives its palette offsets, symmetry counts a
 
 ```
 node hydra/render.mjs --preset <path.json> --out <file.mp4|file.avi> [--duration S] [--res 1920x1080]
-node hydra/render.mjs --preset <path.json> --preview
+node hydra/preview.mjs [port]   # already built: http://127.0.0.1:8642/
 ```
 
-- A local HTTP server serves `page.html`, the hydra-synth dist file and the sketch. Frames come back over a binary WebSocket with a 3-frame in-flight window. The page waits for acks, so ffmpeg backpressure reaches the page.
+- A local HTTP server serves a render page (sharing `lib/runtime.js` with the preview), the hydra-synth dist file and the sketch. Frames come back over a binary WebSocket with a 3-frame in-flight window. The page waits for acks, so ffmpeg backpressure reaches the page.
 - `--duration` overrides `duration_sec`, so frames = `round(duration × 60)`. Default resolution is 1920×1080, matching the Godot models.
 - ffmpeg reads raw RGBA and applies `vflip` (`readPixels` returns rows bottom-up). The file extension picks the codec:
   - `.mp4`: libx264 CRF 18, yuv420p, for `renders/`.
@@ -92,7 +93,7 @@ node hydra/render.mjs --preset <path.json> --preview
   - the page logs any error, or Hydra's `Error during tick()` / shader-compile warnings appear. Hydra otherwise keeps rendering black frames.
   - the WebGL renderer string is SwiftShader or llvmpipe. That would be silently ~100× slower and give different output. `--allow-software` opts in.
   - ffmpeg exits non-zero.
-- `--preview` opens a headed Chromium with `autoLoop: true` at real-time speed for tuning sketches by eye. Nothing is written.
+- The page `render.mjs` serves loads the same `lib/runtime.js` as the preview, so a sketch looks the same in both. Preview fast-forwards in exact 1/60 s steps, so "start at" matches the render frame-for-frame.
 
 ## Integration
 
@@ -108,16 +109,20 @@ node hydra/render.mjs --preset <path.json> --preview
 
 ## Sketches (originals, 300 s long-form each)
 
-Four sketches, chosen to fill gaps in the current set (bursts, fluid, pegs, particles, city) using what Hydra does best: feedback, interference, kaleidoscopes, signal artifacts. Each piece follows a clear arc: an opening, an escalation, a peak, and a cooldown.
+Six sketches, picked by you from a live-preview round on 2026-10-17. A first batch of four quieter sketches (`tunnel`, `moire`, `bloom`, `signal`) was rejected as boring. Drafts of all six exist in `hydra/sketches/` and show the look only. Each still needs a 300 s arc (an opening, an escalation, a peak, a cooldown) built from `ramp`/`lfo`/`at`, which must not dull the look you picked.
 
-| Sketch | Idea | Arc |
+| Sketch | Look (draft) | Arc lever |
 |---|---|---|
-| `tunnel` | Feedback zoom tunnel: a rotating shape fed back into `o0` with scale > 1 and a hue drift. | Slow drift → the tunnel deepens and twists → a strobing peak where the feedback rotation flips → it settles back to drift. |
-| `moire` | Two or three high-frequency oscillators at nearly the same frequency, rotated against each other. Interference fringes. | Monochrome hairlines → color creeps into the beats → fringes speed up and bloom → back to mono. |
-| `bloom` | Kaleidoscope of `voronoi` × `noise` cells. Petal counts change at section boundaries (`at`). | 3 petals, dim → more petals and saturation → a dense mandala → it decays. |
-| `signal` | Broadcast-glitch: `osc` bars → `pixelate` / `posterize` / `scrollY`, modulated by noise. A nod to the radio station. | Clean test-card bars → drift and tearing grow → full breakup → a lock-on snap back to clean. |
+| `cells` | Saturated kaleidoscope: voronoi tiles XORed with rotating colour bands, smeared by feedback. | Kaleidoscope segment count and cell density step up through `at()` sections; feedback blend grows into the peak. |
+| `weave` | Op-art rainbow threads crossed with a slow wave lattice. | Thread frequency and lattice warp; colour narrows to a few hues at the start and end. |
+| `glass` | Neon tiled shapes refracted through pixelated noise, on black. | Refraction strength and tile count; trails lengthen into the peak. |
+| `marble` | Stripe islands advected through a feedback field: ink marbling. | Advection speed and how much new ink is injected; the cooldown lets the field still and drain. |
+| `chrome` | Black-and-mint liquid-metal ribbons folded through themselves. | Fold depth (`modulateRotate`) and ribbon frequency; a brief colour bloom at the peak. |
+| `fold` | Fat posterized colour bands torn by a pixelated noise field: a datamoshed sunset. | Tear amount and pixelation; snaps clean at the end. |
 
-One preset per sketch, named after it. The implementer checks structure (tests, extracted frames). Aesthetic grading is yours, done from 60 s proof renders and then full 300 s renders, per house convention 7 in the ring_rush spec.
+Dropped from the second batch: `plasma`, `vortex`.
+
+One preset per sketch, named after it (drafts exist with placeholder seeds). The implementer checks structure (tests, extracted frames). Aesthetic grading is yours, done in the live preview and then from 60 s proof renders and full 300 s renders, per house convention 7 in the ring_rush spec.
 
 ## Tests (`hydra/test/`, `npm test`)
 
