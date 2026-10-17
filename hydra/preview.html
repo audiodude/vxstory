@@ -1,0 +1,106 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>vxstory · hydra preview</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #000; color: #ddd; font: 13px/1.4 ui-monospace, monospace; }
+  canvas { position: fixed; inset: 0; width: 100vw; height: 100vh; object-fit: contain; }
+  #hud { position: fixed; top: 8px; left: 8px; background: #000a; padding: 8px 10px; border-radius: 6px; }
+  #hud.hidden { display: none; }
+  #hud form { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-top: 6px; }
+  input, select, button { font: inherit; background: #222; color: #ddd; border: 1px solid #444; border-radius: 4px; padding: 2px 6px; }
+  input[type=number] { width: 6em; }
+  #err { color: #f66; white-space: pre-wrap; }
+  #bar { height: 3px; background: #333; margin-top: 6px; }
+  #bar div { height: 100%; background: #8cf; width: 0; }
+</style>
+<canvas id="c" width="1920" height="1080"></canvas>
+<div id="hud">
+  <div id="status">loading…</div>
+  <div id="bar"><div></div></div>
+  <form id="f">
+    <select name="sketch"></select>
+    seed <input name="seed" type="number">
+    <button type="button" id="reroll">🎲</button>
+    speed <select name="speed"><option>1</option><option>2</option><option>5</option><option>10</option></select>
+    start at <input name="t" type="number" min="0" step="10">s
+    <button>run</button>
+  </form>
+  <div>space pause · h hide · r restart</div>
+  <div id="err"></div>
+</div>
+<script src="/hydra-synth.js"></script>
+<script src="/lib/runtime.js"></script>
+<script type="module">
+  const q = new URLSearchParams(location.search)
+  const sketches = await (await fetch('/api/sketches')).json()
+  const name = q.get('sketch') || sketches[0].name
+  const meta = sketches.find((s) => s.name === name)
+  const seed = Number(q.get('seed') ?? meta.seed)
+  const speed = Number(q.get('speed') || 1)
+  const startAt = Number(q.get('t') || 0)
+  const dur = meta.duration_sec
+
+  const form = document.getElementById('f')
+  for (const s of sketches) form.sketch.add(new Option(s.name, s.name, false, s.name === name))
+  form.seed.value = seed
+  form.speed.value = speed
+  form.t.value = startAt
+  form.sketch.onchange = () => (form.seed.value = sketches.find((s) => s.name === form.sketch.value).seed)
+  document.getElementById('reroll').onclick = () => {
+    form.seed.value = Math.floor(Math.random() * 1e6)
+    form.requestSubmit()
+  }
+  form.onsubmit = (e) => {
+    e.preventDefault()
+    location.search = new URLSearchParams(new FormData(form)).toString()
+  }
+
+  const hud = document.getElementById('hud')
+  const status = document.getElementById('status')
+  const bar = document.querySelector('#bar div')
+  const err = document.getElementById('err')
+  const fail = (m) => (err.textContent += m + '\n')
+  window.addEventListener('error', (e) => fail(e.message))
+  const warn = console.warn
+  console.warn = (...a) => { warn(...a); if (String(a[0]).includes('Error')) fail(a.map(String).join(' ')) }
+
+  const h = new Hydra({ canvas: document.getElementById('c'), width: 1920, height: 1080, autoLoop: false,
+                        detectAudio: false, enableStreamCapture: false, precision: 'highp' })
+  const rt = createRuntime({ hydra: h, seed, dur })
+  window.__rt = rt
+  const code = await (await fetch(`/sketches/${name}.js`)).text()
+  try { new Function(code)() } catch (e) { fail(e.stack || e) }
+
+  const dt = 1 / 60
+  const fmt = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`
+  const show = (extra = '') => {
+    const t = rt.now()
+    status.textContent = `${name} · seed ${seed} · ${fmt(t)} / ${fmt(dur)} · ${speed}×${extra}`
+    bar.style.width = `${Math.min(100, (100 * t) / dur)}%`
+  }
+  // Fast-forward in exact 1/60 s steps so feedback state matches a real render.
+  for (let f = 0, n = Math.round(startAt * 60); f < n; f++) {
+    rt.step(dt)
+    if (f % 240 === 0) { show(' · seeking…'); await new Promise((r) => setTimeout(r)) }
+  }
+  window.__ready = true
+  if (q.get('paused') === '1') { show(' · paused'); throw 'paused' }
+
+  let paused = false, acc = 0, last = performance.now()
+  addEventListener('keydown', (e) => {
+    if (e.target.tagName === 'INPUT') return
+    if (e.key === ' ') { paused = !paused; e.preventDefault() }
+    if (e.key === 'h') hud.classList.toggle('hidden')
+    if (e.key === 'r') location.reload()
+  })
+  requestAnimationFrame(function loop(ts) {
+    const real = Math.min(0.1, (ts - last) / 1000)
+    last = ts
+    if (!paused) {
+      acc += real * speed
+      while (acc >= dt) { rt.step(dt); acc -= dt }
+    }
+    show(paused ? ' · paused' : rt.now() > dur ? ' · past end' : '')
+    requestAnimationFrame(loop)
+  })
+</script>

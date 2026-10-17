@@ -1,0 +1,12 @@
+{
+  "name": "vxstory-hydra",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "scripts": {
+    "preview": "node preview.mjs"
+  },
+  "dependencies": {
+    "hydra-synth": "1.4.0"
+  }
+}

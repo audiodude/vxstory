@@ -9,3 +9,4 @@ override.cfg
 
 # Local working status report (not for git)
 /STATUS.md
+hydra/node_modules/

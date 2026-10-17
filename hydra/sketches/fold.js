@@ -1,0 +1,11 @@
+// fold — fat color bands torn and refolded by a pixelated noise field; datamoshed sunset.
+const h = rand()
+osc(5, 0.04, 2.2)
+  .posterize(5, 0.8)
+  .modulateScrollY(osc(2.5, 0.03).rotate(0.4), 0.8)
+  .modulateScrollX(noise(3, 0.12).pixelate(12, 18), 0.4)
+  .modulatePixelate(noise(2, 0.05), 300, 40)
+  .hue(h)
+  .saturate(1.4)
+  .contrast(1.2)
+  .out(o0)

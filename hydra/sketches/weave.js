@@ -1,0 +1,11 @@
+// weave — fine threads crossed with a slow wave lattice; shimmering textile.
+const h = rand()
+osc(90, 0.01, 1.2)
+  .rotate(({ time }) => 0.6 + time * 0.01)
+  .mult(osc(12, 0.06, 0.4).modulate(osc(9, -0.04).rotate(({ time }) => -time * 0.02), 0.9))
+  .modulate(noise(1.5, 0.05), 0.08)
+  .color(2.2, 1, 0.5)
+  .hue(h)
+  .saturate(1.3)
+  .contrast(1.4)
+  .out(o0)

@@ -1,0 +1,12 @@
+// cells — voronoi tiles XORed against rotating bands, kaleidoscoped, smeared by feedback.
+const h = rand()
+const k = 4 + Math.floor(rand() * 5)
+voronoi(6, 0.25, 0.1)
+  .color(0.9, 0.3, 1.2)
+  .diff(osc(18, 0.06, 1.3).rotate(({ time }) => time * 0.03))
+  .modulate(noise(2.5, 0.08), 0.15)
+  .kaleid(k)
+  .hue(h)
+  .contrast(1.3)
+  .blend(src(o0).scale(1.008).rotate(0.003), 0.45)
+  .out(o0)

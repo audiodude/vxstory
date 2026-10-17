@@ -1,0 +1,11 @@
+// glass — a tiled grid of shapes refracted through moving noise, like looking through pebbled glass.
+const h = rand()
+const n = 3 + Math.floor(rand() * 4)
+shape(n, 0.35, 0.25)
+  .repeat(5, 3, 0.5, 0)
+  .scrollX(({ time }) => time * 0.01)
+  .mult(osc(10, 0.08, 1.4).hue(h))
+  .modulate(noise(3.5, 0.08).pixelate(40, 40), 0.12)
+  .modulate(osc(6, 0.02).rotate(({ time }) => time * 0.01), 0.15)
+  .add(src(o0).scale(1.01).modulate(noise(2, 0.05), 0.01), 0.55)
+  .out(o0)

@@ -1,0 +1,11 @@
+// chrome — an oscillator folded through itself into liquid-metal ribbons.
+const h = rand()
+osc(18, -0.04, 0.25)
+  .modulateRotate(osc(3, 0.03).rotate(({ time }) => Math.sin(time * 0.07) * 2), 3)
+  .modulate(noise(1.6, 0.06), 0.45)
+  .modulateScale(osc(2, 0.02).kaleid(3), 0.4)
+  .color(0.9, 1, 1.25)
+  .hue(h)
+  .saturate(0.7)
+  .contrast(1.2)
+  .out(o0)
