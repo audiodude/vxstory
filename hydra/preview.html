@@ -13,7 +13,7 @@
   #bar { height: 3px; background: #333; margin-top: 6px; }
   #bar div { height: 100%; background: #8cf; width: 0; }
 </style>
-<canvas id="c" width="1920" height="1080"></canvas>
+<canvas id="c"></canvas>
 <div id="hud">
   <div id="status">loading…</div>
   <div id="bar"><div></div></div>
@@ -46,8 +46,9 @@
   form.speed.value = speed
   form.t.value = startAt
   form.sketch.onchange = () => (form.seed.value = sketches.find((s) => s.name === form.sketch.value).seed)
+  // Not Math.random: once a sketch loads, that is the seeded PRNG and would walk the same seeds.
   document.getElementById('reroll').onclick = () => {
-    form.seed.value = Math.floor(Math.random() * 1e6)
+    form.seed.value = crypto.getRandomValues(new Uint32Array(1))[0] % 1e6
     form.requestSubmit()
   }
   form.onsubmit = (e) => {
@@ -59,19 +60,23 @@
   const status = document.getElementById('status')
   const bar = document.querySelector('#bar div')
   const err = document.getElementById('err')
-  const fail = (m) => (err.textContent += m + '\n')
-  window.addEventListener('error', (e) => fail(e.message))
-  const warn = console.warn
-  console.warn = (...a) => { warn(...a); if (String(a[0]).includes('Error')) fail(a.map(String).join(' ')) }
+  const seen = new Set()
+  const fail = (m) => {
+    if (seen.has(m)) return
+    seen.add(m)
+    err.textContent += m + '\n'
+  }
 
-  const h = new Hydra({ canvas: document.getElementById('c'), width: 1920, height: 1080, autoLoop: false,
-                        detectAudio: false, enableStreamCapture: false, precision: 'highp' })
-  const rt = createRuntime({ hydra: h, seed, dur })
-  window.__rt = rt
   const code = await (await fetch(`/sketches/${name}.js`)).text()
-  try { new Function(code)() } catch (e) { fail(e.stack || e) }
+  const rt = startSketch({ canvas: document.getElementById('c'), width: 1920, height: 1080,
+                           seed, dur, name, code, onError: fail })
+  window.__rt = rt
 
   const dt = 1 / 60
+  let broken = false // a throwing step (contract break, at() callback) stops playback
+  const step = () => {
+    try { rt.step(dt) } catch (e) { broken = true; fail(e.stack || String(e)) }
+  }
   const fmt = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`
   const show = (extra = '') => {
     const t = rt.now()
@@ -79,14 +84,13 @@
     bar.style.width = `${Math.min(100, (100 * t) / dur)}%`
   }
   // Fast-forward in exact 1/60 s steps so feedback state matches a real render.
-  for (let f = 0, n = Math.round(startAt * 60); f < n; f++) {
-    rt.step(dt)
+  for (let f = 0, n = Math.round(startAt * 60); f < n && !broken; f++) {
+    step()
     if (f % 240 === 0) { show(' · seeking…'); await new Promise((r) => setTimeout(r)) }
   }
   window.__ready = true
-  if (q.get('paused') === '1') { show(' · paused'); throw 'paused' }
 
-  let paused = false, acc = 0, last = performance.now()
+  let paused = q.get('paused') === '1', acc = 0, last = performance.now()
   addEventListener('keydown', (e) => {
     if (e.target.tagName === 'INPUT') return
     if (e.key === ' ') { paused = !paused; e.preventDefault() }
@@ -96,11 +100,11 @@
   requestAnimationFrame(function loop(ts) {
     const real = Math.min(0.1, (ts - last) / 1000)
     last = ts
-    if (!paused) {
+    if (!paused && !broken) {
       acc += real * speed
-      while (acc >= dt) { rt.step(dt); acc -= dt }
+      while (acc >= dt && !broken) { step(); acc -= dt }
     }
-    show(paused ? ' · paused' : rt.now() > dur ? ' · past end' : '')
+    show(broken ? ' · stopped' : paused ? ' · paused' : rt.now() > dur ? ' · past end' : '')
     requestAnimationFrame(loop)
   })
 </script>

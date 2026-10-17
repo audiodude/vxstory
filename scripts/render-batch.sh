@@ -3,7 +3,8 @@
 #   scripts/render-batch.sh [duration_sec] [model:preset ...]
 # With no preset args, renders the full long-form set below. Duration defaults
 # to 300 (a full 5-min piece); pass e.g. 60 for quick proofs.
-# Needs a display (like render.sh) — wrap with xvfb-run if headless:
+# Godot models need a display (like render.sh); wrap with xvfb-run if headless
+# (hydra renders headless on its own):
 #   xvfb-run -a scripts/render-batch.sh 60
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -18,6 +19,7 @@ SET=(
   "matter_cycle:tides"
   "fluid_swirl:aurora"
   "metro_rise:century"
+  "hydra:cells"
 )
 [[ $# -gt 0 ]] && SET=("$@")
 

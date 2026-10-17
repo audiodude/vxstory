@@ -1,6 +1,7 @@
 # vxstory
 
-Seven parameterized generative video models in Godot 4.6. No sound — pure visuals.
+Seven parameterized generative video models in Godot 4.6, plus `hydra`: original
+[Hydra](https://hydra.ojack.xyz/) sketches rendered in headless Chromium. No sound — pure visuals.
 
 | Model | What it is |
 |---|---|
@@ -11,6 +12,7 @@ Seven parameterized generative video models in Godot 4.6. No sound — pure visu
 | `matter_cycle` | Polygons shatter to particles, swirl, re-condense — forever |
 | `supernova_orbit` | Accretion → critical mass → detonation cycle |
 | `metro_rise` | 3D era-city: dawn-to-night build-out, brick→concrete→glass, traffic + cranes |
+| `hydra` | Original Hydra sketches (not Godot): six 300 s arcs — kaleidoscope, op-art weave, refracted glass, ink marbling, liquid chrome, datamoshed bands |
 
 ## Preview / tune
 
@@ -40,6 +42,27 @@ the in-app alternative — it opens a file dialog over the model's `presets/` di
 Output: `renders/<model>_<preset>.mp4` (1920×1080 @ 60fps). Uses Godot Movie Maker
 mode — renders every frame at exactly 60fps, never drops. Requires a display
 (X11/Wayland); `xvfb-run` can be used if headless GPU is needed.
+
+`hydra` doesn't use Godot or a display: `render.sh` hands it to `hydra/render.mjs`
+(see [Hydra](#hydra)).
+
+## Hydra
+
+A Node project, not a Godot one. The real `hydra-synth` runs in headless GPU Chromium,
+stepped exactly 1/60 s per frame, and frames stream into ffmpeg. Setup (Node ≥ 24 via asdf):
+
+    cd hydra && npm ci && npx playwright install chromium-headless-shell
+
+    npm run preview                       # live preview: http://127.0.0.1:8642/
+    scripts/render.sh hydra cells 60      # from the repo root
+
+The preview picks sketch, seed, speed (up to 10×, so a 300 s arc fits in 30 s) and start
+time; space pauses, `h` hides the controls, `r` reloads after a sketch edit. Renders run at
+~11 fps at 1080p (~27 min per 300 s piece) and fail loudly on any sketch error. Sketches,
+presets, the sketch runtime and render options: [`hydra/README.md`](hydra/README.md).
+
+**License:** `hydra-synth` is AGPL-3.0. It is an npm dependency only (gitignored
+`node_modules/`), never committed or bundled; vxstory's own code stays MIT.
 
 ## Presets
 
@@ -187,6 +210,8 @@ button. Descriptions below are from their actual renders.
 
 Expected: `TESTS: 67 run, 0 failed, 0 skipped`
 
+    cd hydra && npm test     # hydra: runtime, determinism, fail-loud paths (needs the GPU + ffmpeg)
+
 ## Layout
 
 ```
@@ -207,6 +232,8 @@ vxstory/
   metro_rise/      # additionally: citygen/ + sim/ (pure logic, headless-tested
                    # via tests/run_tests.gd), view/ (MultiMesh pools + shaders);
                    # the 3D world hangs under the Node2D root
+  hydra/           # Node project, not Godot: render.mjs, preview, lib/runtime.js,
+                   # sketches/, presets/ (see hydra/README.md)
   scripts/
     render.sh      # render.sh <model> <preset> [duration] -> renders/<model>_<preset>.mp4
   renders/         # output mp4s (gitignored)

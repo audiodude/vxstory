@@ -1,0 +1,42 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>vxstory · hydra render</title>
+<link rel="icon" href="data:,">
+<style>html, body { margin: 0; background: #000; }</style>
+<canvas id="c"></canvas>
+<script src="/hydra-synth.js"></script>
+<script src="/lib/runtime.js"></script>
+<script type="module">
+  // Driven by render.mjs: boot the sketch, render `frames` frames and stream each one back as
+  // raw RGBA over the WebSocket, at most 3 in flight (every ack frees a slot).
+  const q = new URLSearchParams(location.search)
+  const [width, height, seed, dur, frames] = ['w', 'h', 'seed', 'dur', 'frames'].map((k) => Number(q.get(k)))
+  const ws = new WebSocket(`ws://${location.host}/`)
+  ws.binaryType = 'arraybuffer'
+  await new Promise((resolve, reject) => {
+    ws.onopen = resolve
+    ws.onerror = () => reject(new Error('frame socket failed to open'))
+  })
+  const report = (error) => ws.send(JSON.stringify({ error }))
+  let inflight = 0
+  let wake = () => {}
+  ws.onmessage = () => { inflight--; wake() }
+  try {
+    const code = await (await fetch('/sketch.js')).text()
+    const canvas = document.getElementById('c')
+    const rt = startSketch({ canvas, width, height, seed, dur, name: q.get('sketch'), code, onError: report })
+    const gl = canvas.getContext('webgl')
+    for (let k = 1; k <= frames; k++) {
+      while (inflight >= 3) await new Promise((r) => (wake = r))
+      rt.step(1 / 60)
+      const px = new Uint8Array(width * height * 4)
+      gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, px)
+      if (gl.isContextLost()) throw new Error('WebGL context lost')
+      ws.send(px)
+      inflight++
+    }
+    ws.send(JSON.stringify({ done: frames }))
+  } catch (e) {
+    report(e.stack || String(e))
+  }
+</script>

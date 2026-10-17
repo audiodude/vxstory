@@ -1,6 +1,6 @@
 # hydra — design spec
 
-**Date:** 2026-10-17 · **Status:** approved, revised after adversarial review (2026-10-17) · **Branch:** `hydra-model`
+**Date:** 2026-10-17 · **Status:** implemented (revised after adversarial review, 2026-10-17); sketches await your aesthetic grading · **Branch:** `hydra-model`
 
 ## Goal
 
@@ -86,9 +86,10 @@ All helpers are pure functions of `time`, apart from `at`. Sketches pass helpers
 | Parameter function throws | `console.warn('ERROR', e)`, then uses the input's default value |
 | Parameter function returns a non-number | `console.warn('function does not return a number', …)` |
 | `update` / `afterUpdate` throws | `console.log(e)` |
-| Anything else inside `tick`, including shader compile failures | `console.warn('Error during tick():', e)` |
+| Anything else inside `tick` | `console.warn('Error during tick():', e)` |
+| GLSL compile or link failure | Nothing. The regl bundled in hydra-synth never checks compile status, so the output draws black and only the browser logs `WebGL: INVALID_OPERATION: useProgram: program not valid` (found while building the fail-loud test). |
 
-`startSketch` reports all of these through one `onError` callback. It reports every `console.warn` and `console.error` call, any `console.log` with an `Error` argument, uncaught errors and unhandled rejections, a throwing sketch body, and `webglcontextlost`. The renderer treats any report as fatal. The preview shows it in red. A NaN from a sketch's own arithmetic still passes silently (`typeof NaN === 'number'`); the helpers' argument checks cover the helper cases.
+`startSketch` reports all of these through one `onError` callback. It reports every `console.warn` and `console.error` call, any `console.log` with an `Error` argument, uncaught errors and unhandled rejections, a throwing sketch body, and `webglcontextlost`. It also wraps the context's `compileShader` and `linkProgram` to check their status and report the GLSL info log. The renderer treats any report as fatal. The preview shows it in red. A NaN from a sketch's own arithmetic still passes silently (`typeof NaN === 'number'`); the helpers' argument checks cover the helper cases.
 
 **Seeds make variation.** Each sketch derives palette offsets, symmetry counts and so on from `rand()`. Two seeds of the same preset should look like the same piece in different colors and arrangements. Radio relies on this when it renders one preset under several seeds. Acceptance: every sketch draws at least one structural value (a count, frequency, layout or section timing) from `rand()`, not just a hue offset. The implementer checks this with a two-seed contact sheet (the same times under two seeds).
 
@@ -107,6 +108,7 @@ node hydra/render.mjs --preset <path.json> --out <file.mp4|file.avi> [--duration
 - `<out>.tmp` is renamed into place only when the render succeeds. On any failure, and on SIGINT/SIGTERM, `render.mjs` kills ffmpeg and Chromium and deletes `<out>.tmp`. Radio's cleanup trap only removes `$TMP_AVI`, not `$TMP_AVI.tmp`.
 - **Fails loudly.** It exits non-zero and leaves no output if:
   - `startSketch` reports anything (see Error capture), or the page throws or crashes. Hydra otherwise keeps rendering default-valued, stale or black frames.
+  - the browser logs a console error, or a warning starting with `WebGL:` (GL errors the page's hooks can't see). Other browser warnings are driver chatter: ANGLE logs `GPU stall due to ReadPixels` on every render.
   - `runtime.step` throws: a contract break, or a throwing `at()` callback.
   - the WebGL renderer string is SwiftShader or llvmpipe. That would be silently ~100× slower and give different output. `--allow-software` opts in.
   - no frame arrives for `--stall-sec` seconds (default 60), counting from launch. That catches hangs, such as an infinite loop in a sketch or a wedged GPU process.
@@ -167,6 +169,7 @@ Tests that would catch real bugs:
 - **Fail-loud:** each of these makes `render.mjs` exit non-zero and leaves neither the output nor `<out>.tmp`: a GLSL compile error (`setFunction`), a throwing sketch body, a throwing parameter function, helper misuse (unknown `ramp` curve), a throwing `update`, `speed = 2`, `fps = 30`, a lost context (`WEBGL_lose_context`), and a hang (`--stall-sec 2`).
 - **Interrupt:** SIGTERM mid-render exits non-zero and leaves neither the output nor `<out>.tmp`.
 - **Frame count:** a `--duration 2` render has exactly 120 frames (`ffprobe -count_frames`), for both `.mp4` and `.avi`.
+- **Orientation:** a fixture that is red on the bottom half on screen comes out red on the bottom half of the video (guards the `vflip`).
 
 ## Out of scope
 
