@@ -12,7 +12,7 @@ Seven parameterized generative video models in Godot 4.6, plus `hydra`: original
 | `matter_cycle` | Polygons shatter to particles, swirl, re-condense — forever |
 | `supernova_orbit` | Accretion → critical mass → detonation cycle |
 | `metro_rise` | 3D era-city: dawn-to-night build-out, brick→concrete→glass, traffic + cranes |
-| `hydra` | Original Hydra sketches (not Godot): six 300 s arcs — kaleidoscope, op-art weave, refracted glass, ink marbling, liquid chrome, datamoshed bands |
+| `hydra` | Original Hydra sketches (not Godot): five 300 s arcs — kaleidoscope, op-art weave, refracted glass, liquid chrome, datamoshed bands |
 
 ## Preview / tune
 

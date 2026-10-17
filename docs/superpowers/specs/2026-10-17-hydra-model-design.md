@@ -145,18 +145,17 @@ The live preview is part of the final output, not throwaway scaffolding. It is h
 
 ## Sketches (originals, 300 s long-form each)
 
-Six sketches, picked by you from a live-preview round on 2026-10-17. A first batch of four quieter sketches (`tunnel`, `moire`, `bloom`, `signal`) was rejected as boring. Drafts of all six exist in `hydra/sketches/` and show the look only. Each still needs a 300 s arc (an opening, an escalation, a peak, a cooldown) built from `ramp`/`lfo`/`at`, which must not dull the look you picked. Each also needs structural seed variation (see Seeds make variation): four of the drafts only seed a hue offset.
+Five sketches. You picked six from a live-preview round on 2026-10-17. A first batch of four quieter sketches (`tunnel`, `moire`, `bloom`, `signal`) was rejected as boring. Drafts of all six existed in `hydra/sketches/` and showed the look only. Each still needed a 300 s arc (an opening, an escalation, a peak, a cooldown) built from `ramp`/`lfo`/`at`, which must not dull the look you picked. Each also needed structural seed variation (see Seeds make variation): four of the drafts only seeded a hue offset.
 
 | Sketch | Look (draft) | Arc lever |
 |---|---|---|
 | `cells` | Saturated kaleidoscope: voronoi tiles XORed with rotating colour bands, smeared by feedback. | Kaleidoscope segment count and cell density step up through `at()` sections; feedback blend grows into the peak. |
 | `weave` | Op-art rainbow threads crossed with a slow wave lattice. | Thread frequency and lattice warp; colour narrows to a few hues at the start and end. |
 | `glass` | Neon tiled shapes refracted through pixelated noise, on black. | Refraction strength and tile count; trails lengthen into the peak. |
-| `marble` | Stripe islands advected through a feedback field: ink marbling. | Advection speed and how much new ink is injected; the cooldown lets the field still and drain. |
 | `chrome` | Black-and-mint liquid-metal ribbons folded through themselves. | Fold depth (`modulateRotate`) and ribbon frequency; a brief colour bloom at the peak. |
 | `fold` | Fat posterized colour bands torn by a pixelated noise field: a datamoshed sunset. | Tear amount and pixelation; snaps clean at the end. |
 
-Dropped from the second batch: `plasma`, `vortex`.
+Dropped from the second batch: `plasma`, `vortex`. Dropped after its arc was built: `marble` (stripe islands in a feedback field, ink marbling), which you judged too rough.
 
 One preset per sketch, named after it (drafts exist with placeholder seeds). The implementer checks structure (tests, extracted frames, the two-seed contact sheet). Aesthetic grading is yours, done in the live preview and then from 60 s proof renders and full 300 s renders, per house convention 7 in the ring_rush spec.
 
