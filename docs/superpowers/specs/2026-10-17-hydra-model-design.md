@@ -36,12 +36,12 @@ These numbers come from throwaway scripts in `/tmp/hydra-spike`, using hydra-syn
 
 ```
 hydra/
-  package.json        # deps: hydra-synth, playwright, ws; "test": "node --test"
+  package.json        # deps: hydra-synth, playwright, ws; scripts: "preview", "test": "node --test"
   package-lock.json   # committed
-  render.mjs          # CLI: render a preset to a video file (built)
-  preview.mjs         # live preview server (exists)
-  preview.html        # preview UI: sketch/seed/speed/start-at controls (exists)
-  lib/runtime.js      # in-page: seeded rand, arc helpers, at() (exists); shared by preview and render
+  render.mjs          # CLI: render a preset to a video file (to build)
+  preview.mjs         # live preview server (built; ships)
+  preview.html        # preview UI: sketch/seed/speed/start-at controls (built; ships)
+  lib/runtime.js      # in-page: seeded rand, arc helpers, at() (built); shared by preview and render
   sketches/<name>.js  # Hydra code: one original sketch per file
   presets/<name>.json # {model, sketch, seed, duration_sec}
   test/*.test.mjs
@@ -80,7 +80,6 @@ Seeds make variation: each sketch derives its palette offsets, symmetry counts a
 
 ```
 node hydra/render.mjs --preset <path.json> --out <file.mp4|file.avi> [--duration S] [--res 1920x1080]
-node hydra/preview.mjs [port]   # already built: http://127.0.0.1:8642/
 ```
 
 - A local HTTP server serves a render page (sharing `lib/runtime.js` with the preview), the hydra-synth dist file and the sketch. Frames come back over a binary WebSocket with a 3-frame in-flight window. The page waits for acks, so ffmpeg backpressure reaches the page.
@@ -93,13 +92,28 @@ node hydra/preview.mjs [port]   # already built: http://127.0.0.1:8642/
   - the page logs any error, or Hydra's `Error during tick()` / shader-compile warnings appear. Hydra otherwise keeps rendering black frames.
   - the WebGL renderer string is SwiftShader or llvmpipe. That would be silently ~100× slower and give different output. `--allow-software` opts in.
   - ffmpeg exits non-zero.
-- The page `render.mjs` serves loads the same `lib/runtime.js` as the preview, so a sketch looks the same in both. Preview fast-forwards in exact 1/60 s steps, so "start at" matches the render frame-for-frame.
+- The page `render.mjs` serves loads the same `lib/runtime.js` as the preview, so a sketch looks the same in both.
+
+## Preview (`preview.mjs`, `preview.html`) — a shipped deliverable
+
+```
+cd hydra && npm run preview        # or: node preview.mjs [port]; default http://127.0.0.1:8642/
+```
+
+The live preview is part of the final output, not throwaway scaffolding. It is how sketches get written and graded, the Hydra equivalent of the Godot models' tweak panel and Designer. It stays in the repo, is documented, and is kept working as the renderer and runtime change.
+
+- **Server:** a dependency-free Node HTTP server, bound to 127.0.0.1. It serves the page, the hydra-synth dist file, `lib/runtime.js` and `sketches/<name>.js`, with `no-store` caching, so editing a sketch and pressing `r` picks up the change. `/api/sketches` lists the sketches with their preset seed and duration.
+- **UI:** pick sketch and seed (🎲 for a random seed), speed 1×/2×/5×/10× so a whole 300 s arc fits in a minute, and start-at seconds. Keys: space pauses, `h` hides the controls, `r` restarts. A progress bar and clock show where you are in the arc, and sketch errors (exceptions, Hydra `Error during tick()`, shader compile failures) appear in red on the page.
+- **Fidelity:** it uses the same frame stepping as the renderer (`autoLoop: false`, exact 1/60 s steps through `runtime.step`). Start-at fast-forwards frame by frame, so feedback state at any time matches the render exactly. Faster speeds take more steps per animation frame and never larger ones.
+- **URL state:** `?sketch=&seed=&speed=&t=` makes a view shareable and reloadable. `&paused=1` stops after seeking, for frame inspection or scripted contact sheets.
+- **README:** the per-model `hydra/README.md` and the root README's Hydra section both document `npm run preview` and the controls.
+- **Tests:** none of its own. It shares `lib/runtime.js` with the renderer, and that file's behaviour is tested there.
 
 ## Integration
 
 **vxstory**
 - `scripts/render.sh`: if `$ROOT/$MODEL/render.mjs` exists, run `node "$ROOT/$MODEL/render.mjs" --preset … --out renders/<model>_<preset>.mp4 [--duration]` instead of Godot. The output name and location are unchanged.
-- `scripts/render-batch.sh`: add one Hydra long-form preset (e.g. `hydra:tunnel`) to `SET`.
+- `scripts/render-batch.sh`: add one Hydra long-form preset (e.g. `hydra:cells`) to `SET`.
 - Root `README.md`: add a model table row, a short "Hydra" section (setup: `cd hydra && npm ci && npx playwright install chromium-headless-shell`, Node ≥ 20 via asdf) and the AGPL note. Change "Seven … models in Godot 4.6" to say what's actually true.
 
 **radio.dangerthirdrail.com** (separate commit in that repo)
@@ -137,5 +151,5 @@ Tests that would catch real bugs:
 - Audio-reactive sketches (`a.fft`) and syncing to the station's music.
 - Community or gallery sketches.
 - GPU-side I420 packing and other speed work beyond the WebSocket path.
-- Hydra's interactive editor and tweak-panel/Designer integration (Godot only).
+- Hydra's interactive code editor, and integration with the Godot tweak panel or Designer. The `hydra/` live preview is the tuning tool here.
 - Adding Hydra pieces to the live radio catalog.
