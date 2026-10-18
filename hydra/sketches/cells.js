@@ -2,6 +2,9 @@
 // Arc: five sections set by at(). Kaleid sides (integer) step up each section and drop
 // back for the coda; cell density, warp, band speed and the feedback blend build into
 // the peak and ease down over the cooldown.
+// Audio (when rendered with a song): bass swells cell density and the feedback smear, the
+// beat kicks contrast and jolts the bands, treble lifts the warp. Every audio term is a
+// feature times a gain, so with no song (features all 0) the silent piece is unchanged.
 const h = rand()
 const k = 4 + Math.floor(rand() * 5) // opening kaleid sides, 4..8
 const kStep = 1 + Math.floor(rand() * 2) // sides added per section, 1..2
@@ -50,12 +53,15 @@ const fb = track([0.3, 0.4, 0.5, 0.62, 0.34])
 const punch = track([1.15, 1.3, 1.4, 1.5, 1.2])
 const bandAngle = integ([0.02 * spin, 0.035 * spin, 0.05 * spin, 0.08 * spin, 0.025 * spin])
 
-voronoi(density, cellSpeed, 0.1)
+// Beat jolt: a decaying kick added to the band angle, in the spin direction.
+const jolt = () => 0.25 * spin * a.beat
+
+voronoi(() => density() * (1 + 0.4 * a.fft[0]), cellSpeed, 0.1)
   .color(0.9, 0.3, 1.2)
-  .diff(osc(bandFreq, 0.06, 1.3).rotate(bandAngle))
-  .modulate(noise(2.5, 0.08), warp)
+  .diff(osc(bandFreq, 0.06, 1.3).rotate((p) => bandAngle(p) + jolt()))
+  .modulate(noise(2.5, 0.08), () => warp() + 0.12 * a.fft[3])
   .kaleid(() => sides[sec])
   .hue(() => h + prog() * 0.2)
-  .contrast(punch)
-  .blend(src(o0).scale(1.008).rotate(0.003 * fbSpin), fb)
+  .contrast(() => punch() + 0.4 * a.beat)
+  .blend(src(o0).scale(1.008).rotate(0.003 * fbSpin), () => Math.min(0.8, fb() + 0.15 * a.fft[0]))
   .out(o0)

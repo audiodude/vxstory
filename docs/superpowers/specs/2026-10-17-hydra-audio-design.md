@@ -12,7 +12,7 @@ Hydra's `a` object (`a.fft`, `a.setBins`, …) listens to a live microphone thro
 
 ## Decode
 
-`lib/audio.mjs` decodes with ffmpeg to 44.1 kHz stereo float PCM, the same rate and channel layout `radio/scripts/bake/assemble.py` uses for the aired audio, then mixes down to mono for analysis. The song's duration is its decoded sample count / 44100.
+`lib/audio.mjs` decodes with ffmpeg to 44.1 kHz float PCM, the rate `radio/scripts/bake/assemble.py` uses for the aired audio, mixed down to mono by ffmpeg for analysis. The song's duration is its decoded sample count / 44100.
 
 ## Features (one row per frame, at time k/60)
 
@@ -21,10 +21,10 @@ Hydra's `a` object (`a.fft`, `a.setBins`, …) listens to a live microphone thro
 | `a.fft[0..3]` | Band energy, 0..1: bass 20–150 Hz, low-mid 150–600 Hz, high-mid 600–2500 Hz, treble 2.5–11 kHz. |
 | `a.level` | Overall loudness (window RMS), 0..1. |
 | `a.beat` | Onset pulse: 1 on the frame of a detected onset, decaying exponentially (τ = 0.12 s). |
-| `a.loudness` | The song's integrated loudness in LUFS (ffmpeg `ebur128`), one number for the whole song. |
+| `a.loudness` | The song's integrated loudness in LUFS (ffmpeg `ebur128`), one number for the whole song; −70 (ebur128's silence reading) without audio. |
 | `a.active` | `true` when rendering with audio. |
 
-- **Analysis windows** are centred on the frame time, so the visuals don't lag the sound. Bands and level use a 2048-sample Hann window (21.5 Hz bins). Onsets use spectral flux on a finer grid (1024-sample window, 256-sample hop, ~5.8 ms), then snap to the nearest frame, so an onset lands within one frame of the transient.
+- **Analysis windows** are centred on the frame time, so the visuals don't lag the sound. Bands and level use a 2048-sample Hann window (21.5 Hz bins). Onsets use spectral flux below 4 kHz (so hi-hat shimmer doesn't fire them) on a finer grid (1024-sample window, 256-sample hop, ~5.8 ms), peak-picked against 1.4× a ±0.3 s moving mean with a 0.18 s refractory gap, then snapped to the nearest frame, so an onset lands within one frame of the transient. Tuned on seven library tracks to ~120–250 onsets/min (an all-band, 0.1 s-gap first pass fired 200–480/min, mostly hi-hats).
 - **Per-song normalization in feature space, not audio:** each band and the level are measured in dB, then mapped so the song's own 5th–95th percentiles become 0..1 (clamped). Frames more than 60 dB below the song's loudest frame (silence, padding) are left out of the percentiles. Every song then uses the full visual range regardless of mastering or tonal balance. Because a constant gain only shifts dB values, a gain-only loudness normalization upstream (radio's sync, done separately) doesn't change any per-frame feature, only `a.loudness`. Sketches that want quiet songs to look calmer read `a.loudness`.
 - **Smoothing:** after normalization, bands and level go through a one-pole follower with a fast attack (τ = 20 ms) and slower release (τ = 150 ms), like Hydra's own `a.setSmooth`, but deterministic.
 - **Silence** (or a constant signal) yields zeros, never NaN.

@@ -54,12 +54,15 @@ stepped exactly 1/60 s per frame, and frames stream into ffmpeg. Setup (Node ≥
     cd hydra && npm ci && npx playwright install chromium-headless-shell
 
     npm run preview                       # live preview: http://127.0.0.1:8642/
+    npm run preview -- --audio-dir DIR    # …with a song picker for audio-reactive sketches
     scripts/render.sh hydra cells 60      # from the repo root
 
 The preview picks sketch, seed, speed (up to 10×, so a 300 s arc fits in 30 s) and start
 time; space pauses, `h` hides the controls, `r` reloads after a sketch edit. Renders run at
-~11 fps at 1080p (~27 min per 300 s piece) and fail loudly on any sketch error. Sketches,
-presets, the sketch runtime and render options: [`hydra/README.md`](hydra/README.md).
+~11 fps at 1080p (~27 min per 300 s piece) and fail loudly on any sketch error. Sketches
+can react to a song (`node hydra/render.mjs … --audio song.mp3`): features are analysed
+offline per frame, so renders stay deterministic. Sketches, presets, the sketch runtime,
+audio features and render options: [`hydra/README.md`](hydra/README.md).
 
 **License:** `hydra-synth` is AGPL-3.0. It is an npm dependency only (gitignored
 `node_modules/`), never committed or bundled; vxstory's own code stays MIT.

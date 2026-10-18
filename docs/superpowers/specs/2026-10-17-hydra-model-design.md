@@ -77,7 +77,7 @@ All helpers are pure functions of `time`, apart from `at`. Sketches pass helpers
 
 **Time.** Frame k (k = 1, 2, …) renders at `time = k/60`, so the first frame shows t = 1/60, not 0. `at(t)` fires before frame k for the smallest k with `k/60 ≥ t − 1e-9`, and `at(0)` fires before frame 1. A callback that registers another `at()` whose time has already passed fires it in the same step. The tolerance avoids float traps: `Math.ceil(8.3 * 60)` is 499, but 8.3 s is frame 498.
 
-**Contract, enforced.** On every tick, Hydra copies the page globals `speed`, `fps`, `bpm`, `update` and `afterUpdate` into its state. A sketch that sets `speed` desyncs `time` from the frame count (with `speed = 2`, `prog()` reaches 1 at 150 s). One that sets `fps` makes Hydra skip draws, so readback returns repeated frames. `runtime.step` throws if `speed !== 1` or `fps` is set. It checks every frame, after `at()` callbacks and before `tick`. `bpm`, `update` and `afterUpdate` are allowed, since they run off the fixed `dt`. Sketches must not read the wall clock (`Date`, `performance.now`) or use audio (`a.fft`). That rule is not enforced. The output is silent, like every other model.
+**Contract, enforced.** On every tick, Hydra copies the page globals `speed`, `fps`, `bpm`, `update` and `afterUpdate` into its state. A sketch that sets `speed` desyncs `time` from the frame count (with `speed = 2`, `prog()` reaches 1 at 150 s). One that sets `fps` makes Hydra skip draws, so readback returns repeated frames. `runtime.step` throws if `speed !== 1` or `fps` is set. It checks every frame, after `at()` callbacks and before `tick`. `bpm`, `update` and `afterUpdate` are allowed, since they run off the fixed `dt`. Sketches must not read the wall clock (`Date`, `performance.now`). That rule is not enforced. Audio: superseded by `2026-10-17-hydra-audio-design.md`, which replaces Hydra's microphone `a` with offline per-frame features.
 
 **Error capture (`startSketch`).** Hydra swallows most failures and keeps drawing:
 
@@ -172,7 +172,7 @@ Tests that would catch real bugs:
 
 ## Out of scope
 
-- Audio-reactive sketches (`a.fft`) and syncing to the station's music.
+- Audio-reactive sketches (`a.fft`) and syncing to the station's music (since added: `2026-10-17-hydra-audio-design.md`).
 - Community or gallery sketches.
 - GPU-side I420 packing and other speed work beyond the WebSocket path.
 - Hydra's interactive code editor, and integration with the Godot tweak panel or Designer. The `hydra/` live preview is the tuning tool here.

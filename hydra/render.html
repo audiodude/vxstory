@@ -23,8 +23,9 @@
   ws.onmessage = () => { inflight--; wake() }
   try {
     const code = await (await fetch('/sketch.js')).text()
+    const audio = q.get('audio') === '1' ? await (await fetch('/features.json')).json() : null
     const canvas = document.getElementById('c')
-    const rt = startSketch({ canvas, width, height, seed, dur, name: q.get('sketch'), code, onError: report })
+    const rt = startSketch({ canvas, width, height, seed, dur, name: q.get('sketch'), code, audio, onError: report })
     const gl = canvas.getContext('webgl')
     for (let k = 1; k <= frames; k++) {
       while (inflight >= 3) await new Promise((r) => (wake = r))

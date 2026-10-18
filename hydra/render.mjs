@@ -10,10 +10,11 @@ import { fileURLToPath } from 'node:url'
 import { parseArgs } from 'node:util'
 import { chromium } from 'playwright'
 import { WebSocketServer } from 'ws'
+import { audioFeatures } from './lib/audio.mjs'
 
 const ROOT = dirname(fileURLToPath(import.meta.url))
-const USAGE = 'usage: node render.mjs --preset <path.json> --out <file.mp4|file.avi> [--duration S] [--res 1920x1080]\n' +
-  '                        [--sketch-dir DIR] [--stall-sec 60] [--allow-software]'
+const USAGE = 'usage: node render.mjs --preset <path.json> --out <file.mp4|file.avi> [--audio song.mp3] [--duration S]\n' +
+  '                        [--res 1920x1080] [--sketch-dir DIR] [--stall-sec 60] [--allow-software]'
 const GPU_ARGS = ['--use-angle=vulkan', '--enable-gpu', '--ignore-gpu-blocklist', '--enable-features=Vulkan']
 // The output goes to <out>.tmp first, so the muxer must be named explicitly.
 const CODECS = {
@@ -38,6 +39,7 @@ try {
     preset: { type: 'string' },
     out: { type: 'string' },
     duration: { type: 'string' },
+    audio: { type: 'string' },
     res: { type: 'string', default: '1920x1080' },
     'sketch-dir': { type: 'string', default: join(ROOT, 'sketches') },
     'stall-sec': { type: 'string', default: '60' },
@@ -65,9 +67,14 @@ if (preset.model !== 'hydra') die(`preset model is ${JSON.stringify(preset.model
 if (!/^[a-z0-9_]+$/.test(preset.sketch ?? '')) die(`preset needs a "sketch" name: ${opts.preset}`)
 if (!Number.isInteger(preset.seed)) die(`preset seed must be an integer: ${preset.seed}`)
 if (!(preset.duration_sec > 0)) die(`preset duration_sec must be > 0: ${preset.duration_sec}`)
-// --duration sets the frame count only; the sketch's `dur` stays the preset's, so a short
-// proof render is exactly the opening of the full piece.
-const duration = opts.duration === undefined ? preset.duration_sec : Number(opts.duration)
+// With --audio the piece is the song: `dur` is the song's length. --duration sets the frame
+// count only; `dur` never changes, so a short proof render is exactly the opening of the piece.
+let features = null
+if (opts.audio) {
+  features = await audioFeatures(opts.audio).catch((e) => die(`can't analyse ${opts.audio}: ${e.message}`))
+}
+const dur = features ? features.dur : preset.duration_sec
+const duration = opts.duration === undefined ? dur : Number(opts.duration)
 if (!(duration > 0)) die(`--duration must be > 0: ${opts.duration}`)
 const frames = Math.round(duration * 60)
 const sketchPath = join(resolve(opts['sketch-dir']), `${preset.sketch}.js`)
@@ -138,9 +145,13 @@ function progress() {
   console.log(`render: frame ${received}/${frames} · ${fps.toFixed(1)} fps · eta ${Math.floor(eta / 60)}m${String(eta % 60).padStart(2, '0')}s`)
 }
 
+// An .mp4 with --audio carries the song (padded or trimmed to the video) for grading; the
+// .avi intermediate stays silent because radio muxes its own audio.
+const withAudio = features && codec.includes('mp4')
 ffmpeg = spawn('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-y',
   '-f', 'rawvideo', '-pix_fmt', 'rgba', '-s', `${width}x${height}`, '-framerate', '60', '-i', 'pipe:0',
-  '-vf', 'vflip', '-an', ...codec, tmp], { stdio: ['pipe', 'ignore', 'pipe'] })
+  ...(withAudio ? ['-i', resolve(opts.audio), '-map', '0:v', '-map', '1:a', '-af', 'apad', '-c:a', 'aac', '-b:a', '192k', '-t', String(frames / 60)] : ['-an']),
+  '-vf', 'vflip', ...codec, tmp], { stdio: ['pipe', 'ignore', 'pipe'] })
 let ffmpegErr = ''
 ffmpeg.stderr.on('data', (d) => (ffmpegErr += d))
 const ffmpegExit = new Promise((r) => ffmpeg.on('exit', (code, signal) => r({ code, signal })))
@@ -153,6 +164,10 @@ server = http.createServer(async (req, res) => {
   if (path === '/sketch.js') {
     res.setHeader('content-type', 'text/javascript')
     return res.end(sketchCode)
+  }
+  if (path === '/features.json') {
+    res.setHeader('content-type', 'application/json')
+    return res.end(JSON.stringify(features))
   }
   const route = STATIC[path]
   if (!route) {
@@ -199,6 +214,7 @@ if (!renderer) await fail('no WebGL in Chromium')
 if (/swiftshader|llvmpipe|softpipe/i.test(renderer) && !opts['allow-software']) {
   await fail(`software WebGL renderer (${renderer}): ~100x slower and different output; pass --allow-software to accept`)
 }
-console.log(`render: ${preset.sketch} seed ${preset.seed} · ${frames} frames at ${width}x${height} · ${renderer} → ${out}`)
-const query = new URLSearchParams({ sketch: preset.sketch, seed: preset.seed, dur: preset.duration_sec, frames, w: width, h: height })
+console.log(`render: ${preset.sketch} seed ${preset.seed} · ${frames} frames at ${width}x${height}` +
+  (features ? ` · audio ${opts.audio} (${features.dur.toFixed(2)} s, ${features.loudness} LUFS)` : '') + ` · ${renderer} → ${out}`)
+const query = new URLSearchParams({ sketch: preset.sketch, seed: preset.seed, dur, frames, w: width, h: height, audio: features ? 1 : 0 })
 await page.goto(`http://127.0.0.1:${server.address().port}/?${query}`, { waitUntil: 'commit' })

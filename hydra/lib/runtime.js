@@ -20,8 +20,35 @@
     smooth: (u) => u * u * (3 - 2 * u),
   }
   const clamp01 = (x) => Math.min(1, Math.max(0, x))
+  const LIVE_AUDIO = ['setBins', 'setSmooth', 'setCutoff', 'setScale', 'show', 'hide']
 
-  window.createRuntime = function ({ hydra, seed, dur }) {
+  // Hydra's microphone `a`, replaced by features analysed offline (lib/audio.mjs): row k of
+  // audio.data belongs to frame k (time k/60). Without audio every feature reads 0.
+  function offlineAudio(audio, row) {
+    const col = (name) => (audio ? audio.names.indexOf(name) : -1)
+    const feat = (c) => (c >= 0 && row() < audio.rows ? audio.data[row() * audio.stride + c] : 0)
+    const fft = {}
+    for (let i = 0; i < 4; i++) {
+      const c = col(`fft${i}`)
+      Object.defineProperty(fft, i, { get: () => feat(c), enumerable: true })
+    }
+    Object.defineProperty(fft, 'length', { value: 4 })
+    const level = col('level'), beat = col('beat')
+    const a = {
+      fft,
+      get level() { return feat(level) },
+      get beat() { return feat(beat) },
+      loudness: audio ? audio.loudness : -70, // LUFS; -70 is ebur128's reading for silence
+      active: !!audio,
+    }
+    for (const m of LIVE_AUDIO) {
+      a[m] = () => { throw new Error(`a.${m}: audio is analysed offline with fixed bands and smoothing`) }
+    }
+    return a
+  }
+
+  window.createRuntime = function ({ hydra, seed, dur, audio = null }) {
+    let frame = 0 // the frame being rendered; 0 before the first step
     const now = () => hydra.synth.time
     const rand = mulberry32(seed)
     Math.random = rand // hydra-synth never calls it; this seeds any stray use in sketch code
@@ -47,12 +74,14 @@
         pending.push({ t, fn })
         pending.sort((a, b) => a.t - b.t) // stable: equal times fire in registration order
       },
+      a: offlineAudio(audio, () => frame),
     })
     return {
       now,
       // Advance exactly one frame: fire at() callbacks due by the new time, then render.
       step(dtSec) {
         const next = now() + dtSec
+        frame++
         while (pending.length && pending[0].t <= next + 1e-9) pending.shift().fn()
         // Hydra copies these globals into its clock on every tick: speed would desync time
         // from the frame count, fps would make it skip draws.
@@ -66,7 +95,7 @@
 
   // Boot a sketch on `canvas`. Every failure goes to onError(message): Hydra turns most of
   // them into console noise and keeps drawing default-valued, stale or black frames.
-  window.startSketch = function ({ canvas, width, height, seed, dur, name, code, onError }) {
+  window.startSketch = function ({ canvas, width, height, seed, dur, name, code, audio = null, onError }) {
     const text = (x) => (x instanceof Error ? x.stack || String(x) : String(x))
     const report = (...args) => onError(args.map(text).join(' '))
     for (const level of ['warn', 'error']) {
@@ -97,7 +126,7 @@
       if (!gl.getProgramParameter(p, gl.LINK_STATUS)) report('shader link failed:', gl.getProgramInfoLog(p))
     }
     const hydra = new Hydra({ canvas, autoLoop: false, detectAudio: false, enableStreamCapture: false, precision: 'highp' })
-    const rt = createRuntime({ hydra, seed, dur })
+    const rt = createRuntime({ hydra, seed, dur, audio })
     try {
       new Function(`${code}\n//# sourceURL=sketches/${name}.js`)()
     } catch (e) {

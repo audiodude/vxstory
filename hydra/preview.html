@@ -19,6 +19,7 @@
   <div id="bar"><div></div></div>
   <form id="f">
     <select name="sketch"></select>
+    <select name="audio" hidden><option value="">no song</option></select>
     seed <input name="seed" type="number">
     <button type="button" id="reroll">🎲</button>
     speed <select name="speed"><option>1</option><option>2</option><option>5</option><option>10</option></select>
@@ -33,15 +34,21 @@
 <script type="module">
   const q = new URLSearchParams(location.search)
   const sketches = await (await fetch('/api/sketches')).json()
+  const songs = await (await fetch('/api/songs')).json()
   const name = q.get('sketch') || sketches[0].name
   const meta = sketches.find((s) => s.name === name)
   const seed = Number(q.get('seed') ?? meta.seed)
   const speed = Number(q.get('speed') || 1)
   const startAt = Number(q.get('t') || 0)
-  const dur = meta.duration_sec
+  const song = q.get('audio') || ''
+  // With a song the piece is the song: features drive `a`, and `dur` is the song's length.
+  const audio = song ? await (await fetch(`/api/features?song=${encodeURIComponent(song)}`)).json() : null
+  const dur = audio ? audio.dur : meta.duration_sec
 
   const form = document.getElementById('f')
   for (const s of sketches) form.sketch.add(new Option(s.name, s.name, false, s.name === name))
+  for (const s of songs) form.audio.add(new Option(s, s, false, s === song))
+  form.audio.hidden = !songs.length
   form.seed.value = seed
   form.speed.value = speed
   form.t.value = startAt
@@ -69,7 +76,7 @@
 
   const code = await (await fetch(`/sketches/${name}.js`)).text()
   const rt = startSketch({ canvas: document.getElementById('c'), width: 1920, height: 1080,
-                           seed, dur, name, code, onError: fail })
+                           seed, dur, name, code, audio, onError: fail })
   window.__rt = rt
 
   const dt = 1 / 60
@@ -80,7 +87,7 @@
   const fmt = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`
   const show = (extra = '') => {
     const t = rt.now()
-    status.textContent = `${name} · seed ${seed} · ${fmt(t)} / ${fmt(dur)} · ${speed}×${extra}`
+    status.textContent = `${name} · seed ${seed}${song ? ` · ♪ ${song}` : ''} · ${fmt(t)} / ${fmt(dur)} · ${speed}×${extra}`
     bar.style.width = `${Math.min(100, (100 * t) / dur)}%`
   }
   // Fast-forward in exact 1/60 s steps so feedback state matches a real render.
@@ -90,10 +97,28 @@
   }
   window.__ready = true
 
-  let paused = q.get('paused') === '1', acc = 0, last = performance.now()
+  // With a song, the frame clock follows the audio clock: each animation frame takes exact
+  // 1/60 s steps until the sketch catches up with audio.currentTime.
+  let player = null
+  if (song) {
+    player = new Audio(`/audio?song=${encodeURIComponent(song)}`)
+    player.playbackRate = speed
+    await new Promise((r, j) => { player.onloadedmetadata = r; player.onerror = () => j(new Error(`can't load ${song}`)) })
+    player.currentTime = rt.now()
+  }
+  let paused = q.get('paused') === '1', acc = 0, last = performance.now(), blocked = false
+  const play = () => player?.play().then(() => (blocked = false), () => {
+    blocked = true // autoplay policy: wait for a click
+    addEventListener('click', () => play(), { once: true })
+  })
+  if (!paused) play()
   addEventListener('keydown', (e) => {
     if (e.target.tagName === 'INPUT') return
-    if (e.key === ' ') { paused = !paused; e.preventDefault() }
+    if (e.key === ' ') {
+      paused = !paused
+      paused ? player?.pause() : play()
+      e.preventDefault()
+    }
     if (e.key === 'h') hud.classList.toggle('hidden')
     if (e.key === 'r') location.reload()
   })
@@ -101,10 +126,15 @@
     const real = Math.min(0.1, (ts - last) / 1000)
     last = ts
     if (!paused && !broken) {
-      acc += real * speed
-      while (acc >= dt && !broken) { step(); acc -= dt }
+      if (player) {
+        for (let n = 0; rt.now() + dt <= player.currentTime + 1e-6 && n < 600 && !broken; n++) step()
+      } else {
+        acc += real * speed
+        while (acc >= dt && !broken) { step(); acc -= dt }
+      }
     }
-    show(broken ? ' · stopped' : paused ? ' · paused' : rt.now() > dur ? ' · past end' : '')
+    if (broken) player?.pause()
+    show(broken ? ' · stopped' : paused ? ' · paused' : blocked ? ' · click to play' : rt.now() > dur ? ' · past end' : '')
     requestAnimationFrame(loop)
   })
 </script>

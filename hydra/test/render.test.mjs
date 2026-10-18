@@ -27,6 +27,9 @@ const FIXTURES = {
   fps: 'fps = 30\nosc(10).out()',
   lost: `osc(10).out()\nat(0.1, () => ${loseContext})`,
   hang: 'osc(10).out()\nat(0.1, () => { for (;;) {} })',
+  beat: 'solid(() => a.beat, 0, 0).out()',
+  reactive: 'osc(() => 10 + 30 * a.fft[0], 0.1, () => a.level).modulate(noise(3), () => a.beat).out()',
+  setbins: 'a.setBins(8)\nosc(10).out()',
 }
 mkdirSync(SKETCHES)
 for (const [name, code] of Object.entries(FIXTURES)) writeFileSync(join(SKETCHES, `${name}.js`), code)
@@ -104,6 +107,7 @@ const BROKEN = [
   ['fps', 'fps = 30', /must not set speed or fps/],
   ['lost', 'a lost WebGL context', /context lost/i],
   ['hang', 'a hung page', /no frame for 2 s/, ['--stall-sec', '2']],
+  ['setbins', "a call to Hydra's live-audio API", /a\.setBins: audio is analysed offline/],
 ]
 for (const [sketch, what, cause, extra] of BROKEN) {
   test(`fails loudly on ${what}, leaving no output`, () => {
@@ -113,6 +117,44 @@ for (const [sketch, what, cause, extra] of BROKEN) {
     assert.ok(noOutput(r.file), 'no output or .tmp left behind')
   })
 }
+
+// 2 s of quiet noise with clicks at 0.25, 0.75, 1.25, 1.75 s: render frames 15, 45, 75, 105.
+const CLICKS = join(work, 'clicks.wav')
+execFileSync('ffmpeg', ['-v', 'error', '-f', 'lavfi', '-i',
+  "aevalsrc='if(lt(mod(t+0.25,0.5),0.002),0.9,0.004*(random(0)-0.5))':s=44100:d=2", CLICKS])
+const redPerFrame = (file) =>
+  [...execFileSync('ffmpeg', ['-v', 'error', '-i', file, '-vf', 'scale=1:1:flags=area', '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-'])]
+    .filter((_, i) => i % 3 === 0)
+
+test('a.beat flashes on each click, and the song sets the length', () => {
+  const r = render('beat', 'beat.avi', { extra: ['--audio', CLICKS] })
+  assert.equal(r.status, 0, r.stderr)
+  const red = redPerFrame(r.file) // video frame i is render frame i + 1
+  assert.equal(red.length, 120, 'no --duration: render the whole 2 s song')
+  const clicks = [15, 45, 75, 105]
+  for (const f of clicks) {
+    const peak = Math.max(...[f - 1, f, f + 1].map((k) => red[k - 1]))
+    assert.ok(peak > 230, `click at frame ${f}: red ${red.slice(f - 3, f + 2)}`)
+  }
+  red.forEach((v, i) => {
+    if (clicks.every((f) => Math.abs(i + 1 - f) > 20)) assert.ok(v < 30, `frame ${i + 1} far from any click is red ${v}`)
+  })
+})
+
+test('an .mp4 rendered with --audio carries the song, cut to the video length', () => {
+  const r = render('reactive', 'song.mp4', { extra: ['--audio', CLICKS, '--duration', '1'] })
+  assert.equal(r.status, 0, r.stderr)
+  const streams = JSON.parse(execFileSync('ffprobe', ['-v', 'error', '-show_entries', 'stream=codec_type,duration',
+    '-of', 'json', r.file], { encoding: 'utf8' })).streams
+  const audio = streams.find((s) => s.codec_type === 'audio')
+  assert.ok(audio, 'audio stream present')
+  assert.ok(Math.abs(Number(audio.duration) - 1) < 0.05, `audio lasts ${audio.duration} s`)
+})
+
+test('an audio-reactive sketch still renders without --audio', () => {
+  const r = render('reactive', 'silent.avi')
+  assert.equal(r.status, 0, r.stderr)
+})
 
 test('SIGTERM mid-render exits non-zero and leaves no output', async () => {
   const file = join(work, 'term.avi')
