@@ -1,0 +1,28 @@
+{
+  "model": "supernova_orbit",
+  "seed": 61,
+  "duration_sec": 600.0,
+  "macros": {"accretion": 0.5, "critical_mass": 0.55, "detonation": 0.9, "chaos": 0.45},
+  "overrides": {"palette": "void", "trail_persist": 0.065, "glow": 0.15},
+  "jitter": {},
+  "modulators": {
+    "lfo": [
+      {
+        "name": "accretion_drift",
+        "oscillators": [
+          {"shape": "sine", "period_sec": 110.0, "phase_deg": 0.0, "amount": 0.6},
+          {"shape": "sine", "period_sec": 41.3, "phase_deg": 40.0, "amount": 0.4}
+        ],
+        "targets": [{"to": "accretion", "amount": 0.3}]
+      },
+      {
+        "name": "chaos_drift",
+        "oscillators": [
+          {"shape": "sine", "period_sec": 110.0, "phase_deg": 120.0, "amount": 0.6},
+          {"shape": "sine", "period_sec": 41.3, "phase_deg": 200.0, "amount": 0.4}
+        ],
+        "targets": [{"to": "chaos", "amount": 0.3}]
+      }
+    ]
+  }
+}
