@@ -1,6 +1,9 @@
 // fold — fat color bands torn and refolded by a pixelated noise field; datamoshed sunset.
 // Arc: bands start lightly torn, the tear and its block size grow to a peak, ease back,
 // then the piece snaps to clean (untorn) posterized bands for the ending.
+// Audio (when rendered with a song): the beat rips an extra tear and kicks contrast, bass
+// deepens the band fold (also after the snap). Every audio term is a feature times a gain,
+// so with no song (features all 0) the silent piece is unchanged.
 const h = rand()
 const pick = (xs) => xs[Math.floor(rand() * xs.length)]
 
@@ -20,8 +23,9 @@ const peakOut = dur * 0.8
 // Tear amount: light opening, builds to above the draft's 0.4, flutters at the peak, eases back.
 const tear = () =>
   (ramp(0, peakIn, 0.1, 0.6) + ramp(peakOut, snapT, 0, -0.45)) *
-  (1 + 0.2 * lfo(9) * ramp(dur * 0.4, peakIn, 0, 1) * ramp(peakOut, snapT, 1, 0))
-const fold = () => ramp(0, peakIn, 0.5, 0.9) + ramp(peakOut, snapT, 0, -0.3)
+    (1 + 0.2 * lfo(9) * ramp(dur * 0.4, peakIn, 0, 1) * ramp(peakOut, snapT, 1, 0)) +
+  0.3 * a.beat
+const fold = () => ramp(0, peakIn, 0.5, 0.9) + ramp(peakOut, snapT, 0, -0.3) + 0.35 * a.fft[0]
 // Tear-block grid coarsens (fewer, bigger blocks) toward the peak; integer steps only.
 const coarse = () => ramp(0, peakIn, 2.2, 1) + ramp(peakOut, snapT, 0, 0.8)
 const blockX = () => Math.round(cellsX * coarse())
@@ -41,15 +45,15 @@ ripped
   .modulatePixelate(noise(2, 0.05), pixMultiple, pixOffset)
   .hue(h)
   .saturate(1.4)
-  .contrast(1.2)
+  .contrast(a.active ? () => 1.2 + 0.35 * a.beat : 1.2) // literal when silent: a uniform drifts some frames
   .out(o0)
 
 // Snap clean: the same bands, untorn, settling into a slow fold for the ending.
 at(snapT, () => {
   bands()
-    .modulateScrollY(osc(2.5, 0.03).rotate(0.4), () => ramp(snapT, dur, 0.6, 0.25))
+    .modulateScrollY(osc(2.5, 0.03).rotate(0.4), () => ramp(snapT, dur, 0.6, 0.25) + 0.35 * a.fft[0])
     .hue(h)
     .saturate(1.4)
-    .contrast(1.2)
+    .contrast(a.active ? () => 1.2 + 0.35 * a.beat : 1.2)
     .out(o0)
 })

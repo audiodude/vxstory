@@ -1,6 +1,9 @@
 // glass — a tiled grid of shapes refracted through moving noise, like looking through pebbled glass.
 // Arc: a sparse, gently bent grid opens; tiles multiply, the glass refracts harder and the
 // trails lengthen into the peak; then the grid thins, the glass clears and the shapes shrink.
+// Audio (when rendered with a song): bass pumps the shapes, the beat cracks the glass
+// (a refraction spike), treble ripples the bend. Every audio term is a feature times a
+// gain, so with no song (features all 0) the silent piece is unchanged.
 const h = rand()
 const n = 3 + Math.floor(rand() * 4) // shape sides
 const cols = 3 + Math.floor(rand() * 3) // opening grid columns
@@ -22,11 +25,11 @@ const bend = env(0.09, 0.19, 0.06)
 const trail = env(0.4, 0.66, 0.42)
 const size = env(0.3, 0.38, 0.26)
 
-shape(n, size, 0.25)
+shape(n, () => size() + 0.1 * a.fft[0], 0.25)
   .repeat(() => Math.round(tilesX()), () => Math.round(tilesY()), brick, 0)
   .scrollX(({ time }) => time * drift)
   .mult(osc(10, 0.08, 1.4).hue(h))
-  .modulate(noise(pebble, 0.08).pixelate(cells, cells), refract)
-  .modulate(osc(6, 0.02).rotate(() => time * 0.01), bend)
+  .modulate(noise(pebble, 0.08).pixelate(cells, cells), () => refract() + 0.15 * a.beat)
+  .modulate(osc(6, 0.02).rotate(() => time * 0.01), () => bend() + 0.1 * a.fft[3])
   .add(src(o0).scale(1.01).modulate(noise(2, 0.05), 0.01), trail)
   .out(o0)

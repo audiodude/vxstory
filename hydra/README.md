@@ -19,18 +19,18 @@ npm run preview          # or: node preview.mjs [port]; then open http://127.0.0
 npm run preview -- --audio-dir ~/music   # adds a song picker
 ```
 
-Pick a sketch and seed (🎲 for a random one), a speed (1×/2×/5×/10×: a 300 s arc fits in a minute at 5×) and a start time. Keys: space pauses, `h` hides the controls, `r` reloads (it picks up sketch edits). The bar and clock show where you are in the arc. Sketch errors show in red, and a contract break stops playback.
+Pick a sketch and seed (🎲 for a random one), a speed (1×/2×/5×/10×: a 300 s arc fits in a minute at 5×) and a start time. The preview opens paused at the start time: press ▶ play or space to start. Keys: space pauses, `h` hides the controls, `r` reloads (it picks up sketch edits). The bar and clock show where you are in the arc. Sketch errors show in red, and a contract break stops playback.
 
-The preview steps the same way as the renderer, and seeking fast-forwards frame by frame, so a frame at any time matches the render on the same machine. The URL holds the view: `?sketch=cells&seed=42&speed=5&t=120`. Add `&paused=1` to stop right after seeking, for inspecting frames or scripting screenshots.
+The preview steps the same way as the renderer, and seeking fast-forwards frame by frame, so a frame at any time matches the render on the same machine. The URL holds the view: `?sketch=glass&seed=42&speed=5&t=120`. Add `&paused=0` to start playing right after seeking.
 
 With `--audio-dir`, pick a song (`&audio=<file name>`): the song plays, the sketch's clock follows the audio clock in exact 1/60 s steps, and the piece lasts as long as the song. Speed sets the playback rate. If the browser blocks autoplay, the status line says "click to play".
 
 ## Render
 
 ```
-node render.mjs --preset presets/cells.json --out cells.mp4 [--duration 60]
-node render.mjs --preset presets/cells.json --audio song.mp3 --out cells_song.mp4
-scripts/render.sh hydra cells 60          # from the repo root: renders/hydra_cells.mp4
+node render.mjs --preset presets/glass.json --out glass.mp4 [--duration 60]
+node render.mjs --preset presets/glass.json --audio song.mp3 --out glass_song.mp4
+scripts/render.sh hydra glass 60          # from the repo root: renders/hydra_glass.mp4
 ```
 
 | Option | Meaning |
@@ -54,16 +54,14 @@ Each sketch is a 300 s arc: opening, escalation, peak, cooldown. Its preset (`pr
 
 | Sketch | Look | Arc | Seeded structure |
 |---|---|---|---|
-| `cells` | Saturated kaleidoscope: voronoi tiles XORed with rotating colour bands, smeared by feedback. | Kaleidoscope sides step up through four sections while cell density, warp, band spin and feedback build to a peak; it drops back to the opening sides for a slow coda. | Sides and step size, cell density, band frequency, spin directions, section times. |
-| `weave` | Op-art rainbow threads crossed with a slow wave lattice. | Few-hued, sparse threads; thread density and lattice warp climb while colour opens to the full rainbow at the peak; then it relaxes and narrows again. | Thread angle and density, lattice frequency, warp direction, peak time. |
 | `glass` | Neon tiled shapes refracted through pixelated noise, on black. | A sparse grid gains tiles, refraction and trail length into a held peak, then thins and clears. | Shape sides, grid size and growth, brick or straight layout, pebble size, drift. |
-| `chrome` | Black-and-mint liquid-metal ribbons folded through themselves. | Wide, shallow folds deepen and tighten to a dense peak with a brief colour bloom, then relax and dim. | Ribbon frequency and drift, fold field and axis swing, symmetry count, bloom time. |
 | `fold` | Fat posterized colour bands torn by a pixelated noise field: a datamoshed sunset. | Lightly torn bands; tearing and pixelation grow to a full mosaic, ease back, then snap to clean bands. | Band frequency, tilt and levels, tear axis, tear-block grid, snap time. |
+| `slices` | Blue kaleidoscoped oscillator slices masked by spinning triangles, over pixelated purple noise. | Broad slices behind one large star; the oscillator tightens, kaleid sides and mask tiles step up and the noise blocks shrink into a held peak, where the slices snap ahead half a sector; then it eases back. | Kaleid sides and step, star points, spin direction, peak time. |
 
 ## Presets
 
 ```json
-{"model": "hydra", "sketch": "cells", "seed": 1137, "duration_sec": 300.0}
+{"model": "hydra", "sketch": "glass", "seed": 1548, "duration_sec": 300.0}
 ```
 
 `sketch` is required: radio renders from a seed-substituted temp copy of the preset, so the file name can't identify the sketch. Convention: one preset per sketch, named after it.
@@ -109,7 +107,15 @@ Hydra's own `a` listens to a live microphone in real time, which can't line up w
 - Without a song every feature reads 0, so an audio-aware sketch must still look complete at 0. That keeps it usable as a silent catalog piece.
 - Hydra's live-audio controls (`a.setBins`, `a.setSmooth`, `a.show`, …) throw: bands and smoothing are fixed offline.
 
-`cells` is the demo: bass swells cell density and the feedback smear, the beat kicks contrast and jolts the bands, and treble lifts the warp. Its silent render is unchanged.
+Every sketch reacts, and every silent render is frame-identical to its pre-audio version:
+
+| Sketch | Bass (`fft[0]`) | Beat | Treble (`fft[3]`) |
+|---|---|---|---|
+| `glass` | Pumps the shapes | Cracks the glass (refraction spike) | Ripples the bend |
+| `fold` | Deepens the band fold | Rips an extra tear, kicks contrast | — |
+| `slices` | Swells the star | Kicks contrast | Lifts the slices' saturation |
+
+To keep a silent render identical when you add audio to a constant input, keep the literal when there's no song: `.contrast(a.active ? () => 1.4 + 0.3 * a.beat : 1.4)`. Hydra compiles a number into the shader but a function into a uniform, and the two can round differently on a few frames.
 
 ## Tests
 

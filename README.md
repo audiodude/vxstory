@@ -12,7 +12,7 @@ Seven parameterized generative video models in Godot 4.6, plus `hydra`: original
 | `matter_cycle` | Polygons shatter to particles, swirl, re-condense — forever |
 | `supernova_orbit` | Accretion → critical mass → detonation cycle |
 | `metro_rise` | 3D era-city: dawn-to-night build-out, brick→concrete→glass, traffic + cranes |
-| `hydra` | Original Hydra sketches (not Godot): five 300 s arcs — kaleidoscope, op-art weave, refracted glass, liquid chrome, datamoshed bands |
+| `hydra` | Original Hydra sketches (not Godot): refracted glass, datamoshed bands, kaleidoscope slices |
 
 ## Preview / tune
 
@@ -55,7 +55,7 @@ stepped exactly 1/60 s per frame, and frames stream into ffmpeg. Setup (Node ≥
 
     npm run preview                       # live preview: http://127.0.0.1:8642/
     npm run preview -- --audio-dir DIR    # …with a song picker for audio-reactive sketches
-    scripts/render.sh hydra cells 60      # from the repo root
+    scripts/render.sh hydra glass 60      # from the repo root
 
 The preview picks sketch, seed, speed (up to 10×, so a 300 s arc fits in 30 s) and start
 time; space pauses, `h` hides the controls, `r` reloads after a sketch edit. Renders run at

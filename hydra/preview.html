@@ -23,8 +23,9 @@
     seed <input name="seed" type="number">
     <button type="button" id="reroll">🎲</button>
     speed <select name="speed"><option>1</option><option>2</option><option>5</option><option>10</option></select>
-    start at <input name="t" type="number" min="0" step="10">s
-    <button>run</button>
+    start at <input name="t" type="number" min="0" step="any">s
+    <button>load</button>
+    <button type="button" id="pause">⏸ pause</button>
   </form>
   <div>space pause · h hide · r restart</div>
   <div id="err"></div>
@@ -84,7 +85,8 @@
   const step = () => {
     try { rt.step(dt) } catch (e) { broken = true; fail(e.stack || String(e)) }
   }
-  const fmt = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`
+  // now() sums 1/60 steps and drifts just under whole seconds (60 s reads 59.9999…).
+  const fmt = (s) => { s = Math.floor(s + 1e-6); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}` }
   const show = (extra = '') => {
     const t = rt.now()
     status.textContent = `${name} · seed ${seed}${song ? ` · ♪ ${song}` : ''} · ${fmt(t)} / ${fmt(dur)} · ${speed}×${extra}`
@@ -106,17 +108,25 @@
     await new Promise((r, j) => { player.onloadedmetadata = r; player.onerror = () => j(new Error(`can't load ${song}`)) })
     player.currentTime = rt.now()
   }
-  let paused = q.get('paused') === '1', acc = 0, last = performance.now(), blocked = false
+  let paused = q.get('paused') !== '0', acc = 0, last = performance.now(), blocked = false
   const play = () => player?.play().then(() => (blocked = false), () => {
     blocked = true // autoplay policy: wait for a click
-    addEventListener('click', () => play(), { once: true })
+    addEventListener('click', () => paused || play(), { once: true })
   })
+  const pauseBtn = document.getElementById('pause')
+  const togglePause = () => {
+    paused = !paused
+    paused ? player?.pause() : play()
+    pauseBtn.textContent = paused ? '▶ play' : '⏸ pause'
+  }
+  pauseBtn.textContent = paused ? '▶ play' : '⏸ pause'
+  // blur so a later space press doesn't also "click" the focused button
+  pauseBtn.onclick = () => { togglePause(); pauseBtn.blur() }
   if (!paused) play()
   addEventListener('keydown', (e) => {
     if (e.target.tagName === 'INPUT') return
     if (e.key === ' ') {
-      paused = !paused
-      paused ? player?.pause() : play()
+      togglePause()
       e.preventDefault()
     }
     if (e.key === 'h') hud.classList.toggle('hidden')
