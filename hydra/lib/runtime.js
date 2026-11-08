@@ -48,7 +48,8 @@
   }
 
   window.createRuntime = function ({ hydra, seed, dur, audio = null }) {
-    let frame = 0 // the frame being rendered; 0 before the first step
+    const DT = 1 / 60
+    let frame = -1 // the frame being rendered, at time frame/60; -1 before the first step
     const now = () => hydra.synth.time
     const rand = mulberry32(seed)
     Math.random = rand // hydra-synth never calls it; this seeds any stray use in sketch code
@@ -74,13 +75,15 @@
         pending.push({ t, fn })
         pending.sort((a, b) => a.t - b.t) // stable: equal times fire in registration order
       },
-      a: offlineAudio(audio, () => frame),
+      a: offlineAudio(audio, () => Math.max(frame, 0)),
     })
     return {
       now,
-      // Advance exactly one frame: fire at() callbacks due by the new time, then render.
-      step(dtSec) {
-        const next = now() + dtSec
+      // Render the next frame: frame 0 at time 0, then 1/60 s later each step. at() callbacks
+      // due by the frame's time fire first.
+      step() {
+        const dt = frame < 0 ? 0 : DT
+        const next = now() + dt
         frame++
         while (pending.length && pending[0].t <= next + 1e-9) pending.shift().fn()
         // Hydra copies these globals into its clock on every tick: speed would desync time
@@ -88,7 +91,7 @@
         if (window.speed !== 1 || window.fps) {
           throw new Error(`sketches must not set speed or fps (speed=${window.speed}, fps=${window.fps})`)
         }
-        hydra.tick(dtSec * 1000)
+        hydra.tick(dt * 1000)
       },
     }
   }

@@ -7,6 +7,7 @@ import { once } from 'node:events'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { setTimeout as sleep } from 'node:timers/promises'
+import { audioFeatures } from '../lib/audio.mjs'
 
 const RENDER = new URL('../render.mjs', import.meta.url).pathname
 const work = mkdtempSync(join(tmpdir(), 'hydra-test-'))
@@ -118,7 +119,7 @@ for (const [sketch, what, cause, extra] of BROKEN) {
   })
 }
 
-// 2 s of quiet noise with clicks at 0.25, 0.75, 1.25, 1.75 s: render frames 15, 45, 75, 105.
+// 2 s of quiet noise with clicks at 0.25, 0.75, 1.25, 1.75 s: video frames 15, 45, 75, 105.
 const CLICKS = join(work, 'clicks.wav')
 execFileSync('ffmpeg', ['-v', 'error', '-f', 'lavfi', '-i',
   "aevalsrc='if(lt(mod(t+0.25,0.5),0.002),0.9,0.004*(random(0)-0.5))':s=44100:d=2", CLICKS])
@@ -126,18 +127,24 @@ const redPerFrame = (file) =>
   [...execFileSync('ffmpeg', ['-v', 'error', '-i', file, '-vf', 'scale=1:1:flags=area', '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-'])]
     .filter((_, i) => i % 3 === 0)
 
-test('a.beat flashes on each click, and the song sets the length', () => {
+test('a.beat flashes on each click, and the song sets the length', async () => {
   const r = render('beat', 'beat.avi', { extra: ['--audio', CLICKS] })
   assert.equal(r.status, 0, r.stderr)
-  const red = redPerFrame(r.file) // video frame i is render frame i + 1
+  const red = redPerFrame(r.file) // video frame k is time k/60
   assert.equal(red.length, 120, 'no --duration: render the whole 2 s song')
+  // Onsets come from a 5.8 ms flux grid and lead a click by a few ms, so snapping to the
+  // nearest frame can put the beat row one frame early. The flash must start exactly on that row.
+  const f = await audioFeatures(CLICKS)
+  const beat = f.names.indexOf('beat')
+  const onsets = [...Array(f.rows).keys()].filter((k) => f.data[k * f.stride + beat] === 1)
   const clicks = [15, 45, 75, 105]
-  for (const f of clicks) {
-    const peak = Math.max(...[f - 1, f, f + 1].map((k) => red[k - 1]))
-    assert.ok(peak > 230, `click at frame ${f}: red ${red.slice(f - 3, f + 2)}`)
-  }
+  assert.equal(onsets.length, clicks.length, `beat rows ${onsets}`)
+  onsets.forEach((k, i) => {
+    assert.ok(Math.abs(k - clicks[i]) <= 1, `click at frame ${clicks[i]}: beat row ${k}`)
+    assert.ok(red[k - 1] < 30 && red[k] > 230, `beat row ${k} should flash on video frame ${k}: red ${k - 2}..${k + 2} = ${red.slice(k - 2, k + 3)}`)
+  })
   red.forEach((v, i) => {
-    if (clicks.every((f) => Math.abs(i + 1 - f) > 20)) assert.ok(v < 30, `frame ${i + 1} far from any click is red ${v}`)
+    if (clicks.every((c) => Math.abs(i - c) > 20)) assert.ok(v < 30, `frame ${i} far from any click is red ${v}`)
   })
 })
 

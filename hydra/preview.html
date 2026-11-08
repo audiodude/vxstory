@@ -84,7 +84,7 @@
   const dt = 1 / 60
   let broken = false // a throwing step (contract break, at() callback) stops playback
   const step = () => {
-    try { rt.step(dt) } catch (e) { broken = true; fail(e.stack || String(e)) }
+    try { rt.step() } catch (e) { broken = true; fail(e.stack || String(e)) }
   }
   // now() sums 1/60 steps and drifts just under whole seconds (60 s reads 59.9999…).
   const fmt = (s) => { s = Math.floor(s + 1e-6); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}` }
@@ -93,8 +93,9 @@
     status.textContent = `${name} · seed ${seed}${song ? ` · ♪ ${song}` : ''} · ${fmt(t)} / ${fmt(dur)} · ${speed}×${extra}`
     bar.style.width = `${Math.min(100, (100 * t) / dur)}%`
   }
-  // Fast-forward in exact 1/60 s steps so feedback state matches a real render.
-  for (let f = 0, n = Math.round(startAt * 60); f < n && !broken; f++) {
+  // Fast-forward through frames 0..n in exact 1/60 s steps so feedback state matches a real
+  // render, ending on the frame at the start time.
+  for (let f = 0, n = Math.round(startAt * 60); f <= n && !broken; f++) {
     step()
     if (f % 240 === 0) { show(' · seeking…'); await new Promise((r) => setTimeout(r)) }
   }
