@@ -1,5 +1,5 @@
 // organ_pipes — a rank of brass pipes whose heights roll in a wave, over a dark violet wall.
-// Ported from psychadelic-carousel's 04-organ-pipes.
+// Ported from psychedelic-carousel's 04-organ-pipes.
 // Arc: a short rank of low pipes in a gentle swell opens the piece; pipes are added, the wave
 // rises taller, rolls faster and folds into more crests while the wall warms, into a held
 // peak; then the rank thins and settles.

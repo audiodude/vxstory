@@ -64,7 +64,7 @@ Each sketch is a 300 s arc: opening, escalation, peak, cooldown. Its preset (`pr
 | `halftone` | Dark dots on coloured ink printing a drifting black sun. | A coarse screen prints a small, faint sun; the screen gets finer, the sun grows and wanders wider and the ink cycles faster into a held peak, then it coarsens back. | Dot screen size, peak time. |
 | `third_eye` | A ringed iris over turning rays; the pupil dilates. | The eye opens almost shut in a dim field of few rays; rays multiply and brighten, the iris widens and the pupil opens into a held peak, then the field dims and the eye half-closes. | Ray and iris segment counts, peak time. |
 
-`mandala`, `hex_tunnel`, `organ_pipes`, `halftone` and `third_eye` are ported from `psychadelic-carousel` patches; their peaks sit near the originals.
+`mandala`, `hex_tunnel`, `organ_pipes`, `halftone` and `third_eye` are ported from `psychedelic-carousel` patches; their peaks sit near the originals.
 
 ## Presets
 

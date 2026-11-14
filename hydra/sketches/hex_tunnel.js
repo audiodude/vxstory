@@ -1,5 +1,5 @@
 // hex_tunnel — a rainbow hexagon keyed over its own zooming past.
-// Ported from psychadelic-carousel's 03-hex-tunnel.
+// Ported from psychedelic-carousel's 03-hex-tunnel.
 // Arc: a small hexagon drifting over short, slow trails opens the piece; the hexagon grows
 // and turns faster, its stripes tighten and the fall speeds up into long rainbow tunnels at a
 // held peak; then it slows back to a gentle drift.

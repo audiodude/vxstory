@@ -1,5 +1,5 @@
 // mandala — folded stripes breathing on the bass, the wedge count stepping every two seconds.
-// Ported from psychadelic-carousel's 02-mandala.
+// Ported from psychedelic-carousel's 02-mandala.
 // Arc: a calm, sparse mandala opens the piece; stripes multiply, the wedge counts double,
 // the petals fold deeper and the colour bands tighten into a held peak; then it eases back
 // to a calmer bloom.

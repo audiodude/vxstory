@@ -1,5 +1,5 @@
 // third_eye — a ringed iris over a field of turning rays; the pupil dilates on the bass.
-// Ported from psychadelic-carousel's 15-third-eye.
+// Ported from psychedelic-carousel's 15-third-eye.
 // Arc: the eye opens almost shut in a dim field of few rays; rays multiply and brighten, the
 // iris widens and its rings tighten, the pupil opens into a held peak; then the field dims
 // and the eye half-closes.

@@ -1,5 +1,5 @@
 // halftone — a screen of dark dots on coloured ink, growing to print a drifting, pulsing black sun.
-// Ported from psychadelic-carousel's 11-halftone.
+// Ported from psychedelic-carousel's 11-halftone.
 // Arc: a coarse screen prints a small, faint sun; the screen gets finer, the sun grows and
 // wanders wider, the ink cycles faster into a held peak; then the screen coarsens and the
 // sun shrinks back.
