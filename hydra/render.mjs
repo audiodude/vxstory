@@ -169,6 +169,11 @@ server = http.createServer(async (req, res) => {
     res.setHeader('content-type', 'application/json')
     return res.end(JSON.stringify(features))
   }
+  const image = /^\/images\/([a-z0-9_-]+)\.(jpg|png)$/.exec(path)
+  if (image) {
+    res.setHeader('content-type', image[2] === 'png' ? 'image/png' : 'image/jpeg')
+    return res.end(await readFile(join(ROOT, path)).catch(() => ((res.statusCode = 404), '')))
+  }
   const route = STATIC[path]
   if (!route) {
     res.statusCode = 404

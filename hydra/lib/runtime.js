@@ -126,12 +126,31 @@
       if (!gl.getProgramParameter(p, gl.LINK_STATUS)) report('shader link failed:', gl.getProgramInfoLog(p))
     }
     const hydra = new Hydra({ canvas, autoLoop: false, detectAudio: false, enableStreamCapture: false, precision: 'highp' })
+    // Hydra's initImage loads in the background, so the first frames would draw a blank
+    // source for as long as the download takes. Track each load; callers await rt.ready
+    // before the first step. A failed load is reported (fatal in a render).
+    const loads = []
+    for (const s of hydra.s) {
+      s.initImage = (url = '', params) => loads.push(new Promise((done) => {
+        const img = new Image()
+        img.crossOrigin = 'anonymous'
+        img.onload = () => {
+          s.src = img
+          s.dynamic = false
+          s.tex = s.regl.texture({ data: img, ...params })
+          done()
+        }
+        img.onerror = () => { report(`image failed to load: ${url}`); done() }
+        img.src = url
+      }))
+    }
     const rt = createRuntime({ hydra, seed, dur, audio })
     try {
       new Function(`${code}\n//# sourceURL=sketches/${name}.js`)()
     } catch (e) {
       report(e)
     }
+    rt.ready = Promise.all(loads)
     return rt
   }
 })()

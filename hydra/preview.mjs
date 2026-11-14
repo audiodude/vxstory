@@ -14,7 +14,7 @@ const { values, positionals } = parseArgs({ allowPositionals: true, options: { '
 const PORT = Number(positionals[0] || 8642)
 const AUDIO_DIR = values['audio-dir'] ? resolve(values['audio-dir']) : null
 const AUDIO_TYPES = { '.mp3': 'audio/mpeg', '.wav': 'audio/wav', '.flac': 'audio/flac', '.ogg': 'audio/ogg', '.m4a': 'audio/mp4' }
-const types = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json' }
+const types = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json', '.jpg': 'image/jpeg', '.png': 'image/png' }
 
 async function sketches() {
   const names = (await readdir(join(ROOT, 'sketches'))).filter((f) => f.endsWith('.js')).map((f) => f.slice(0, -3))
@@ -95,7 +95,8 @@ http.createServer(async (req, res) => {
     }
     if (path === '/audio') return await sendAudio(req, res, songPath(url.searchParams.get('song') ?? ''))
     const m = path.match(/^\/sketches\/([a-z0-9_]+)\.js$/)
-    const file = routes[path] ?? (m && `sketches/${m[1]}.js`)
+    const img = /^\/images\/[a-z0-9_-]+\.(jpg|png)$/.test(path)
+    const file = routes[path] ?? (m && `sketches/${m[1]}.js`) ?? (img && path.slice(1))
     if (!file) throw Object.assign(new Error('not found'), { code: 'ENOENT' })
     res.setHeader('content-type', types[file.slice(file.lastIndexOf('.'))])
     res.setHeader('cache-control', 'no-store') // edit a sketch, reload the page

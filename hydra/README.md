@@ -57,6 +57,14 @@ Each sketch is a 300 s arc: opening, escalation, peak, cooldown. Its preset (`pr
 | `glass` | Neon tiled shapes refracted through pixelated noise, on black. | A sparse grid gains tiles, refraction and trail length into a held peak, then thins and clears. | Shape sides, grid size and growth, brick or straight layout, pebble size, drift. |
 | `fold` | Fat posterized colour bands torn by a pixelated noise field: a datamoshed sunset. | Lightly torn bands; tearing and pixelation grow to a full mosaic, ease back, then snap to clean bands. | Band frequency, tilt and levels, tear axis, tear-block grid, snap time. |
 | `slices` | Blue kaleidoscoped oscillator slices masked by spinning triangles, over pixelated purple noise. | Broad slices behind one large star; the oscillator tightens, kaleid sides and mask tiles step up and the noise blocks shrink into a held peak, where the slices snap ahead half a sector; then it eases back. | Kaleid sides and step, star points, spin direction, peak time. |
+| `babylon_tile` | Yellow and blue moiré stripes cut through a photo of a glazed tile, folded into a kaleidoscope while the photo breathes. | Broad stripes through a sparse mask; the stripes tighten, the mask fills in, the breathing deepens and the kaleidoscope gains sectors and turns into a held peak, then eases to a calm six-fold tile. | Peak stripe frequency and sector count, spin direction, breathing rate, peak time. |
+| `mandala` | Folded rainbow stripes, wedge count stepping every two seconds. | A calm, sparse mandala; stripes multiply, wedge counts double, petals fold deeper and colour bands tighten into a held peak, then it eases to a calmer bloom. | Stripe count, spin direction, peak time. |
+| `hex_tunnel` | A rainbow hexagon keyed over its own zooming past. | A small hexagon over short, slow trails; it grows, turns faster and its fall speeds into long rainbow tunnels at a held peak, then slows to a gentle drift. | Stripes in the hexagon, spin direction, peak time. |
+| `organ_pipes` | Brass pipes whose heights roll in a wave, on dark violet. | A short rank of low pipes; pipes are added, the wave rises, rolls faster and gains crests while the wall warms into a held peak, then the rank thins and settles. | Pipe count, wave length, peak time. |
+| `halftone` | Dark dots on coloured ink printing a drifting black sun. | A coarse screen prints a small, faint sun; the screen gets finer, the sun grows and wanders wider and the ink cycles faster into a held peak, then it coarsens back. | Dot screen size, peak time. |
+| `third_eye` | A ringed iris over turning rays; the pupil dilates. | The eye opens almost shut in a dim field of few rays; rays multiply and brighten, the iris widens and the pupil opens into a held peak, then the field dims and the eye half-closes. | Ray and iris segment counts, peak time. |
+
+`mandala`, `hex_tunnel`, `organ_pipes`, `halftone` and `third_eye` are ported from `psychadelic-carousel` patches; their peaks sit near the originals.
 
 ## Presets
 
@@ -78,6 +86,7 @@ A sketch is plain Hydra code in `sketches/<name>.js`, run once at startup. On to
 | `ramp(t0, t1, a, b, curve='smooth')` | `a` → `b` over seconds `t0..t1`, holding at both ends. Curves: `linear`, `ease_in`, `ease_out`, `smooth`. |
 | `lfo(period_sec, phase_deg=0)` | Sine wave, -1..1. |
 | `at(t_sec, fn)` | Runs `fn` once, just before the first frame at or after `t_sec` (e.g. to re-patch the `.out()` chain). |
+| `s0.initImage(url)` | Hydra's, but the first frame waits for the image, and a failed load is an error. Put images in `images/` and load them as `/images/<name>.jpg` (or `.png`): render and preview serve that folder, so renders never depend on the network. |
 
 Pass helpers as functions so Hydra re-evaluates them every frame: `osc(() => ramp(0, dur * 0.4, 4, 40))`. Write times as fractions of `dur`. Frame k renders at `time = k/60`.
 
@@ -114,6 +123,12 @@ Every sketch reacts, and every silent render is frame-identical to its pre-audio
 | `glass` | Pumps the shapes | Cracks the glass (refraction spike) | Ripples the bend |
 | `fold` | Deepens the band fold | Rips an extra tear, kicks contrast | — |
 | `slices` | Swells the star | Kicks contrast | Lifts the slices' saturation |
+| `babylon_tile` | Zooms the tile in (mids turn it) | Flashes | Speeds the stripes |
+| `mandala` | Zooms, swells the petals (mids spin, high-mids band colour) | Flashes | — |
+| `hex_tunnel` | Pumps the hexagon and the fall | — | — |
+| `organ_pipes` | Lifts the wave (mids set its pace) | Flashes | Warms the brass |
+| `halftone` | Swells the sun (mids slide the screen) | Inverts the print | Pushes the ink colour |
+| `third_eye` | Dilates the pupil (mids turn the rays) | Flashes the rays | — |
 
 To keep a silent render identical when you add audio to a constant input, keep the literal when there's no song: `.contrast(a.active ? () => 1.4 + 0.3 * a.beat : 1.4)`. Hydra compiles a number into the shader but a function into a uniform, and the two can round differently on a few frames.
 

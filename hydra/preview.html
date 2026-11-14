@@ -79,6 +79,7 @@
   const rt = startSketch({ canvas: document.getElementById('c'), width: 1920, height: 1080,
                            seed, dur, name, code, audio, onError: fail })
   window.__rt = rt
+  await rt.ready
 
   const dt = 1 / 60
   let broken = false // a throwing step (contract break, at() callback) stops playback
