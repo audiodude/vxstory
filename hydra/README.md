@@ -63,6 +63,7 @@ Each sketch is a 300 s arc: opening, escalation, peak, cooldown. Its preset (`pr
 | `organ_pipes` | Brass pipes whose heights roll in a wave, on dark violet. | A short rank of low pipes; pipes are added, the wave rises, rolls faster and gains crests while the wall warms into a held peak, then the rank thins and settles. | Pipe count, wave length, peak time. |
 | `halftone` | Dark dots on coloured ink printing a drifting black sun. | A coarse screen prints a small, faint sun; the screen gets finer, the sun grows and wanders wider and the ink cycles faster into a held peak, then it coarsens back. | Dot screen size, peak time. |
 | `third_eye` | A ringed iris over turning rays; the pupil dilates. | The eye opens almost shut in a dim field of few rays; rays multiply and brighten, the iris widens and the pupil opens into a held peak, then the field dims and the eye half-closes. | Ray and iris segment counts, peak time. |
+| `tiger` | Orange and cream stripes folded into a kaleidoscope, torn by counter-scrolling stripes along a stretching square seam. | Soft, wide stripes under a gentle tear; the stripes tighten, the kaleidoscope gains sectors, the tear deepens and the turn quickens into a held peak, then it eases to a calmer pelt. | Palette offset, triangle sides, kaleid sides, spin direction, peak time. |
 
 `mandala`, `hex_tunnel`, `organ_pipes`, `halftone` and `third_eye` are ported from `psychedelic-carousel` patches; their peaks sit near the originals.
 
@@ -129,6 +130,7 @@ Every sketch reacts, and every silent render is frame-identical to its pre-audio
 | `organ_pipes` | Lifts the wave (mids set its pace) | Flashes | Warms the brass |
 | `halftone` | Swells the sun (mids slide the screen) | Inverts the print | Pushes the ink colour |
 | `third_eye` | Dilates the pupil (mids turn the rays) | Flashes the rays | — |
+| `tiger` | Pulls the tear stripes apart (high-mids deepen the tear) | — | Swells the seam |
 
 To keep a silent render identical when you add audio to a constant input, keep the literal when there's no song: `.contrast(a.active ? () => 1.4 + 0.3 * a.beat : 1.4)`. Hydra compiles a number into the shader but a function into a uniform, and the two can round differently on a few frames.
 
